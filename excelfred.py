@@ -23,14 +23,13 @@ def ABS(*args: int | float | str) -> float:
             if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
                 try: arg = eval(arg)
                 except: raise ValueError(f"🚫 String Error: Invalid Formula `{arg}` is not evaluatable.")
-            try:  number = float(arg)
+            try: number = float(arg)
             except: raise TypeError(f"🚫 ABS() only works on numbers or math-like strings. Got `{arg}`.")
 
             total += abs(number)
         assert args, "Value Error: 🚫 ABS() requires at least one numeric input."
         return total
-    except AssertionError as ae:  raise ValueError(str(ae))
-print("ABS")
+    except AssertionError as ae: raise ValueError(str(ae))
 
 def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: float = 15000.00, frequency: int = 1, basis: int = 0, calc_method: bool = True) -> float:
     """
@@ -67,7 +66,7 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
 
     if settle_date <= issue_date: raise ValueError("🚫 Settlement date must be after issue date.")
     if frequency not in [1, 2, 4]: raise ValueError("🚫 Frequency must be 1 (Annual), 2 (Semi-annual), or 4 (Quarterly).")
-    if basis not in range(5):  raise ValueError("🚫 Basis must be between 0 and 4.")
+    if basis not in range(5): raise ValueError("🚫 Basis must be between 0 and 4.")
 
     start_date = issue_date if calc_method else first_date
     if settle_date <= start_date: raise ValueError("🚫 Settlement date must be after the start date based on calc_method.")
@@ -93,7 +92,6 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
         year_basis = 365
     accrued = par * rate * days / year_basis
     return accrued
-print("ACCRINT")
 
 def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basis: int = 0) -> float:
     """
@@ -120,16 +118,13 @@ def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basi
     try:
         issue_date = pd.to_datetime(issue, dayfirst=True)
         maturity_date = pd.to_datetime(maturity, dayfirst=True)
-    except:  raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY'.")
-
+    except: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY'.")
     if maturity_date <= issue_date: raise ValueError("Logic Error: 🚫 Maturity date must be after the issue date.")
+
     delta_days = (maturity_date - issue_date).days
     if basis == 0 or basis == 4:
-        d1 = issue_date
-        d2 = maturity_date
-        days = ((d2.year - d1.year) * 360 +
-                (d2.month - d1.month) * 30 +
-                (d2.day - d1.day))
+        d1 = issue_date; d2 = maturity_date
+        days = ((d2.year - d1.year) * 360 + (d2.month - d1.month) * 30 + (d2.day - d1.day))
         year_basis = 360
     elif basis == 1:
         days = delta_days
@@ -145,7 +140,6 @@ def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basi
     else: raise ValueError("String Error: 🚫 Basis must be an integer between 0 and 4.")
     interest = par * rate * days / year_basis
     return interest
-print("ACCRINTM")
 
 def ACOS(*args: int | float | str) -> float:
     """
@@ -164,22 +158,17 @@ def ACOS(*args: int | float | str) -> float:
     import numpy as np
     try:
         assert args, "Value Error: 🚫 ACOS() requires one numeric input."
-        if len(args) != 1:
-            raise ValueError("Parameters Error: 🚫 ACOS() only takes one input.")
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 ACOS() only takes one input.")
         for arg in args:
             if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
                 try:  arg = eval(arg)
                 except:  raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
-            try:
-                number = float(arg)
-            except:
-                raise TypeError(f"Number Error: 🚫 ACOS expects a numeric value or a math-like string. Got `{arg}`")
-            if number < -1 or number > 1:
-                raise ValueError("Range Error: 🚫 Input must be between -1 to 1 (inclusive).")
+            try: number = float(arg)
+            except: raise TypeError(f"Number Error: 🚫 ACOS expects a numeric value or a math-like string. Got `{arg}`")
+            if number < -1 or number > 1: raise ValueError("Range Error: 🚫 Input must be between -1 to 1 (inclusive).")
             return np.arccos(number)
     except AssertionError as ae:
         raise ValueError(str(ae))
-print("ACOS")
 
 def ACOSH(*args: int | float | str) -> float:
     """
@@ -197,21 +186,16 @@ def ACOSH(*args: int | float | str) -> float:
     import numpy as np
     try:
         assert args, "Value Error: 🚫 ACOSH() requires one numeric input."
-        if len(args) != 1:
-            raise ValueError("Parameters Error: 🚫 ACOSH() only takes one input.")
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 ACOSH() only takes one input.")
         for arg in args:
             if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
                 try: arg = eval(arg)
                 except: raise ValueError(f"Evaluate Error: 🚫 Cannot evaluate the expression `{arg}`.")
-            try:
-                number = float(arg)
-            except:
-                raise TypeError(f"Type Error: 🚫 ACOSH expects a numeric value or a math-like string. Got `{arg}`")
-            if number < 1:
-                raise ValueError("Number Error: 🚫 Input must be greater than or equal to 1.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 ACOSH expects a numeric value or a math-like string. Got `{arg}`")
+            if number < 1: raise ValueError("Number Error: 🚫 Input must be greater than or equal to 1.")
             return np.arccosh(number)
     except AssertionError as ae: raise ValueError(str(ae))
-print("ACOSH")
 
 def ACOT(*args: int | float | str) -> float:
     """
@@ -240,9 +224,7 @@ def ACOT(*args: int | float | str) -> float:
             if number == 0: return np.pi / 2  # ACOT(0) = π/2
 
             return np.arctan(1 / number)
-
     except AssertionError as ae: raise ValueError(str(ae))
-print("ACOT")
 
 def ACOTH(*args: int | float | str) -> float:
     """
@@ -273,7 +255,6 @@ def ACOTH(*args: int | float | str) -> float:
             
             return 0.5 * np.log((number + 1) / (number - 1))
     except AssertionError as ae: raise ValueError(str(ae))
-print("ACOTH")
 
 def AMORLINC(cost: float, date_purchased: str, first_period: str, salvage: float, period: int, rate: float, basis: int = 1):
     """
@@ -298,7 +279,6 @@ def AMORLINC(cost: float, date_purchased: str, first_period: str, salvage: float
         float: Depreciation amount for the specified period
     """
     import pandas as pd
-
     try:
         purchase_date = pd.to_datetime(date_purchased, dayfirst=True)
         period_end = pd.to_datetime(first_period, dayfirst=True)
@@ -324,7 +304,6 @@ def AMORLINC(cost: float, date_purchased: str, first_period: str, salvage: float
             if remaining <= salvage: return 0.0
             depreciation = cost * rate
     return depreciation
-print("AMORLINC")
 
 if __name__ == "__main__":
-    print("EXCELFRED MODULE")
+    print("")
