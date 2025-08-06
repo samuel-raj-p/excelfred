@@ -1,6 +1,6 @@
 [project]
 name = "excelfred"
-version = "0.1.1"
+version = "0.1.3"
 description = "Recreate Microsoft Excel formulas using NumPy and Pandas"
 authors = [{ name = "SAMUEL RAJ P", email = "samuelraj239@email.com" }]
 readme = "README.md"
