@@ -1061,3 +1061,115 @@ def BINOM_DIST(number_s: int, trials: int, probability_s: float, cumulative=True
     """
     if cumulative: return binom.cdf(number_s, trials, probability_s)
     else: return binom.pmf(number_s, trials, probability_s)
+
+def BINOM_DIST_RANGE(trials: int, probability_s: float, num_s: int, num_s2: int = None) -> float:
+    """
+    `=BINOM.DIST.RANGE(trials, probability_s, num_s, [num_s2])` Returns the probability of a trial result falling between two thresholds.
+
+    Parameters:
+        trials       : Number of independent trials (n >= 0)
+        probability_s: Probability of success on each trial (0 <= p <= 1)
+        num_s        : Number of successes for lower bound
+        num_s2       : (Optional) Upper bound of successes. If omitted, only P(X = num_s) is returned.
+
+    **Example Inputs**:
+
+         print(BINOM_DIST_RANGE(60, 0.75, 45))         # 0.11822800461154298
+         print(BINOM_DIST_RANGE(60, 0.75, 45, 50))     # 0.5236297934718878
+    """
+    if not (0 <= probability_s <= 1): raise ValueError("#VALUE! 🚫 probability_s must be between 0 and 1")
+    if trials < 0 or num_s < 0 or (num_s2 is not None and num_s2 < 0): raise ValueError("#VALUE! 🚫 trials and successes must be non-negative integers")
+    if num_s > trials or (num_s2 is not None and num_s2 > trials): raise ValueError("#VALUE! 🚫 successes cannot exceed number of trials")
+    if num_s2 is not None and num_s2 < num_s: raise ValueError("#VALUE! 🚫 2nd number must be greater than or equal to First Number")
+    if num_s2 is None: return binom.pmf(num_s, trials, probability_s)
+    else: return binom.cdf(num_s2, trials, probability_s) - binom.cdf(num_s - 1, trials, probability_s)
+
+def BINOM_INV(trials: int, probability_s: float, alpha: float) -> int:
+    """
+    `=BINOM.INV(trials, probability_s, alpha)`
+    Returns the smallest number of successes for which the cumulative binomial
+    distribution is greater than or equal to alpha.
+
+    Parameters:
+        trials       : Number of independent trials (n >= 0)
+        probability_s: Probability of success on each trial (0 <= p <= 1)
+        alpha        : Cumulative probability threshold (0 <= alpha <= 1)
+
+    *Example Input*:
+
+         print(BINOM_INV(6, 0.5, 0.75))   # 4
+         print(BINOM_INV(10, 0.3, 0.9))   # 5
+    """
+    if not (0 <= probability_s <= 1): raise ValueError("#VALUE! 🚫 probability_s must be between 0 and 1")
+    if not (0 <= alpha <= 1): raise ValueError("#VALUE! 🚫 alpha must be between 0 and 1")
+    if trials < 0: raise ValueError("#VALUE! 🚫 trials must be non-negative integer")
+    return int(binom.ppf(alpha, trials, probability_s))
+
+def BITAND(number1: int, number2: int) -> int:
+    """
+    `=BITAND(number1, number2)` Returns a **bitwise** AND of two numbers.
+
+    *Example Input*:
+
+        print(BITAND(5, 3))    # 1  (0101 AND 0011 = 0001)
+        print(BITAND(12, 25))  # 8  (1100 AND 11001 = 01000)
+    """
+    if number1 < 0 or number2 < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number1, int) and isinstance(number2, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return number1 & number2
+
+def BITOR(number1: int, number2: int) -> int:
+    """
+    `=BITOR(number1, number2)` Returns a **bitwise** OR of two numbers.
+
+    *Example Input*:
+
+        print(BITOR(5, 3))    # 7  (0101 OR 0011 = 0111)
+        print(BITOR(12, 25))  # 29 (1100 OR 11001 = 11101)
+    """
+    if number1 < 0 or number2 < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number1, int) and isinstance(number2, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return number1 | number2
+
+def BITLSHIFT(number: int, shift_amount: int) -> int:
+    """
+    `=BITLSHIFT(number, shift_amount)` Returns a number shifted left by a given number of bits.
+
+    *Example Input*:
+
+        print(BITLSHIFT(5, 2))   # 20  (0101 << 2 = 10100)
+        print(BITLSHIFT(12, 3))  # 96  (1100 << 3 = 1100000)
+    """
+    if number < 0 or shift_amount < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number, int) and isinstance(shift_amount, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return number << shift_amount
+
+def BITRSHIFT(number: int, shift_amount: int) -> int:
+    """
+    `=BITRSHIFT(number, shift_amount)` Returns a number shifted right by a given number of bits.
+
+    *Example Input*:
+
+        print(BITRSHIFT(20, 2))  # 5   (10100 >> 2 = 0101)
+        print(BITRSHIFT(96, 3))  # 12  (1100000 >> 3 = 1100)
+    """
+    if number < 0 or shift_amount < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number, int) and isinstance(shift_amount, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return number >> shift_amount
+
+def BITXOR(number1: int, number2: int) -> int:
+    """
+    `=BITXOR(number1, number2)` Returns a **bitwise** XOR of two numbers.
+
+    *Example Input*:
+
+        print(BITXOR(5, 3))    # 6  (0101 XOR 0011 = 0110)
+        print(BITXOR(12, 25))  # 21 (1100 XOR 11001 = 10101)
+    """
+    if number1 < 0 or number2 < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number1, int) and isinstance(number2, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return number1 ^ number2
+
+#C
+
+
