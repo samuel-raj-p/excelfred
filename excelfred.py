@@ -1,11 +1,9 @@
 """
-excelfred - A beginner-friendly open-source Python package recreating Excel 514 functions
-`Author: Samuel Raj P (FRED)`
-https://www.linkedin.com/in/samuel-raj23
+excelfred alias "xl" - A Python package recreating Excel 514 functions
+`Author: Samuel Raj P (FRED)` https://www.linkedin.com/in/samuel-raj23
 """
 
-import pandas as pd, numpy as np
-
+#A
 def ABS(*args: int | float | str) -> float:
     """**=ABS(number)** Returns an Absolute value of a number by taking Modulus. A number without its sign
     
@@ -32,6 +30,8 @@ def ABS(*args: int | float | str) -> float:
         assert args, "Value Error: 🚫 ABS() requires at least one numeric input."
         return total
     except AssertionError as ae: raise ValueError(str(ae))
+
+import pandas as pd, numpy as np
 
 def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: float = 15000.00, frequency: int = 1, basis: int = 0, calc_method: bool = True) -> float:
     """
@@ -448,7 +448,6 @@ def ARRAYTOTEXT(array, format=0) -> str:
 
     """
     rows = []
-
     def to_excel_val(val):
         if val is None: return "" if format == 0 else '""'
         if isinstance(val, bool): return "1" if format == 0 and val else ("0" if format == 0 else ('"1"' if val else '"0"'))
@@ -743,7 +742,6 @@ def AVERAGEIF(range_vals, criteria, average_range=None) -> float:
 
 def AVERAGEIFS(average_range, *criteria_pairs) -> float:
     """
-    
     `=AVERAGEIFS(average_range, criteria_range1, criteria1, [criteria_range2, criteria2] ...)`
     Finds Average **(arithemetic mean)** for the cells specified by a given set of condition or criteria.
 
@@ -774,17 +772,15 @@ def AVERAGEIFS(average_range, *criteria_pairs) -> float:
     filtered = average_range[mask]
     return np.mean(filtered) if len(filtered) > 0 else np.nan
 
-import numpy as np
-import pandas as pd
-
-def bahttext(number: int | float) -> str:
+#B
+def BAHTTEXT(number: int | float) -> str:
     """
     `=BAHTTEXT(number)` Converts a number to a text **(baht)**
 
     *Example Inputs*:
      
-     print(bahttext(1234.56))  # หนึ่งพันสองร้อยสามสิบสี่บาทห้าสิบหกสตางค์
-     print(bahttext(5000))     # ห้าพันบาทถ้วน
+     print(BAHTTEXT(1234.56))  # หนึ่งพันสองร้อยสามสิบสี่บาทห้าสิบหกสตางค์
+     print(BAHTTEXT(5000))     # ห้าพันบาทถ้วน
     """
     number = round(float(number), 2)
     thai_numbers = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า']
@@ -811,3 +807,209 @@ def bahttext(number: int | float) -> str:
     else: satang_words = num_to_thai_words(satang) + 'สตางค์'
     return baht_words + satang_words
 
+def BASE(number: int, radix: int, min_length: int = 0) -> str:
+    """
+    `=BASE(number, radix, [min_length])` Converts a *number* into a text representation with the given **radix** (base)
+    
+    Parameters:
+        number: → integer in base 10
+        target_base: → (2 to 36) just means the numbering system you want to convert to:
+            2 = binary (only 0,1)
+            8 = octal (0–7)
+            10 = decimal (normal numbers 0–9)
+            16 = hexadecimal (0–9, A–F)
+            Up to 36 = can use digits 0–9 and letters A–Z as symbols.
+        min_length: → optional zero-padding length for output.
+
+    *Example Input*:
+
+     print(BASE(255, 16))          # FF
+     print(BASE(255, 2, 12))       # 000011111111
+     print(BASE(-255, 16, 4))      # -00FF
+     print(BASE(123456, 36))       # 2N9C
+
+    `So higher radix more symbols available for writing numbers.`
+    """
+    if not (2 <= radix <= 36): raise ValueError("#VALUE! 🚫 Radix must be between 2 and 36")
+    if number == 0: return "0".zfill(min_length)
+    digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    is_negative = number < 0
+    number = abs(number)
+    result = ""
+    while number > 0:
+        result = digits[number % radix] + result
+        number //= radix
+    if is_negative: result = "-" + result
+    if len(result.lstrip("-")) < min_length: result = ("-" if is_negative else "") + result.lstrip("-").zfill(min_length)
+    return result
+
+from scipy.special import iv, jv, kv, yv
+
+def BESSELI(x, n) -> float:
+    """
+    `=BESSELI(x, n)` Returns the modified Bessel function **In(x)**
+
+    Parameters:
+        x (float): The value at which to evaluate the function.
+        n (int): The order of the Bessel function (must be >= 0).
+
+    *Example Input*:
+
+        BESSELI(5, 2)   = 17.505614966624236
+        BESSELI(10, 0)  = 2815.7166284662544
+        BESSELI(3, 1)   = 3.95337021740261
+        BESSELI(1, 0)   = 1.2660658777520084
+        BESSELI(0.5, 0) = 1.0634833707413236
+        BESSELI(7, 3)   = 85.1754868428438
+        BESSELI(20, 5)  = 23018392.213413667
+        BESSELI(50, 2)  = 2.8164306402451954e+20
+
+    `Returns (float) The calculated Bessel I_n(x) value.`
+    """
+    return iv(n, x)
+
+def BESSELJ(x, n) -> float:
+    """
+    `=BESSELJ(x, n)` Returns the Bessel function of first kind **jn(x)**.
+
+    Parameters:
+        x (float): The value at which to evaluate the function.
+        n (int): The order of the Bessel function (must be >= 0).
+
+    *Example Input*:
+
+        BESSELJ(5, 2)   = 0.04656511627775229
+        BESSELJ(10, 0)  = -0.24593576445134832
+        BESSELJ(3, 1)   = 0.33905895852593626
+        BESSELJ(1, 0)   = 0.7651976865579666
+        BESSELJ(0.5, 0) = 0.938469807240813
+        BESSELJ(7, 3)   = -0.16755558799533432
+        BESSELJ(20, 5)  = 0.15116976798239493
+        BESSELJ(50, 2)  = -0.05971280079425883
+    """
+    return jv(n, x)
+
+def BESSELK(x, n) -> float:
+    """
+    `=BESSELK(x, n)` Returns the Bessel function of first kind **kn(x)**.
+
+    Parameters:
+        x (float): The value at which to evaluate the function.
+        n (int): The order of the Bessel function (must be >= 0).
+
+    *Example Input*:
+
+       BESSELK(5, 2)   = 0.00530894371222346
+       BESSELK(10, 0)  = 1.778006231616765e-05
+       BESSELK(3, 1)   = 0.040156431128194184
+       BESSELK(1, 0)   = 0.42102443824070834
+       BESSELK(0.5, 0) = 0.9244190712276656
+       BESSELK(7, 3)   = 0.0007710751535668902
+       BESSELK(20, 5)  = 1.0538660139974233e-09
+       BESSELK(50, 2)  = 3.547931838858198e-23
+    """    
+    return kv(n, x)
+
+def BESSELY(x, n) -> float:
+    """
+    `=BESSELY(x, n)` Returns the Bessel function of first kind **Yn(x)**.
+
+    Parameters:
+        x (float): The value at which to evaluate the function.
+        n (int): The order of the Bessel function (must be >= 0).
+
+    *Example Input*:
+
+     BESSELY(5, 2)    = 0.3676628826055246
+     BESSELY(10, 0)   = 0.05567116728359934
+     BESSELY(3, 1)    = 0.32467442479180014
+     BESSELY(1, 0)    = 0.088256964215677
+     BESSELY(0.5, 0)  = -0.44451873350670656
+     BESSELY(7, 3)    = 0.26808060304231507
+     BESSELY(20, 5)   = -0.10003576788953246
+     BESSELY(50, 2)   = 0.09579316872759651
+    """
+    return yv(n, x)
+
+
+def BIN2DEC(num: int | float | str) -> int:
+    """
+    `=BIN2DEC(num)` Converts a binary number to decimal.
+    
+    *Example Inputs*:
+
+     print(BIN2DEC("1010"))    # 10
+     print(BIN2DEC(1010))      # 10
+     print(BIN2DEC("   110 ")) # 6
+     print(BIN2DEC("1021"))    # ValueError
+     print(BIN2DEC(12.5))      # TypeError
+
+    `Any other String or Numbers except 0 or 1 return Error !`
+    """
+    if not isinstance(num, (str, int)): raise TypeError(" #VALUE! 🚫 BIN2DEC accepts only int or str inputs.")
+    if isinstance(num, int): num_str = str(num)
+    else: num_str = num.strip()
+    if not num_str.isdigit() or any(ch not in "01" for ch in num_str): raise ValueError("#VALUE! 🚫 Input must contain only binary digits (0 or 1).")
+    return int(num_str, 2)
+
+def BIN2HEX(num) -> str:
+    """
+    `=BIN2HEX(num)` Converts a binary number to hexadecimal.
+    
+    *Example usage*:
+
+     print(BIN2HEX("1010"))    # 'A'
+     print(BIN2HEX(1011))      # 'B'
+     print(BIN2HEX(" 1111 "))  # 'F'
+
+    `Any other String or Numbers except 0 or 1 return Error !`
+
+    """
+    if not isinstance(num, (int, str)): raise TypeError("#VALUE! 🚫 BIN2HEX accepts only int or str.")
+    bin_str = str(num).strip()
+    if not bin_str: raise ValueError("#VALUE! 🚫 Empty input is not a valid binary number.")
+    if not all(ch in '01' for ch in bin_str): raise ValueError("#VALUE! 🚫 Binary number must contain only 0s and 1s.")
+    decimal_value = int(bin_str, 2)
+    hex_value = hex(decimal_value)[2:].upper()
+    return hex_value
+
+def BIN2OCT(num: int | float | str) -> int:
+    """
+    `=BIN2OCT(num)` Convert a binary number to its octal representation.
+    
+    *Example usage*:
+
+     print(BIN2OCT("1010"))    # 12
+     print(BIN2OCT(1011))      # 15
+     print(BIN2OCT(" 1111 "))  # 70
+     print(BIN2OCT(111))       # 7
+
+    `Any other String or Numbers except 0 or 1 return Error !`
+    """
+    bin_str = str(num).strip()
+    if not bin_str or any(ch not in "01" for ch in bin_str): raise ValueError("Input must be a binary number containing only 0 and 1.")
+    decimal_value = int(bin_str, 2)
+    octal_str = format(decimal_value, "o")
+    return octal_str
+
+
+
+from scipy.stats import binom
+
+def BINOM_DIST(number_s: int, trials: int, probability_s: float, cumulative=True) -> float:
+    """
+    `=BINOM.DIST(number_s, trials, probability_s, is_cummulative)` Returns the individual term of binomial distribution.
+
+    Parameters:
+        x : number of successes
+        n : number of trials
+        p : probability of success (0 <= p <= 1)
+        cumulative : True for cumulative distribution, False for pmf
+
+    *Example usage*:
+
+     print(BINOM_DIST(2, 10, 0.5, False))  # 0.04394531250000004
+     print(BINOM_DIST(2, 10, 0.5, True))   # 0.0546875
+    """
+    if cumulative: return binom.cdf(number_s, trials, probability_s)
+    else: return binom.pmf(number_s, trials, probability_s)
