@@ -4,6 +4,8 @@ excelfred alias "xl" - A Python package recreating Excel 514 functions
 """
 
 #A
+import pandas as pd, numpy as np
+
 def ABS(*args: int | float | str) -> float:
     """**=ABS(number)** Returns an Absolute value of a number by taking Modulus. A number without its sign
     
@@ -30,8 +32,6 @@ def ABS(*args: int | float | str) -> float:
         assert args, "Value Error: 🚫 ABS() requires at least one numeric input."
         return total
     except AssertionError as ae: raise ValueError(str(ae))
-
-import pandas as pd, numpy as np
 
 def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: float = 15000.00, frequency: int = 1, basis: int = 0, calc_method: bool = True) -> float:
     """
@@ -773,6 +773,9 @@ def AVERAGEIFS(average_range, *criteria_pairs) -> float:
     return np.mean(filtered) if len(filtered) > 0 else np.nan
 
 #B
+from scipy.special import iv, jv, kv, yv
+from scipy.stats import binom, beta
+
 def BAHTTEXT(number: int | float) -> str:
     """
     `=BAHTTEXT(number)` Converts a number to a text **(baht)**
@@ -843,8 +846,6 @@ def BASE(number: int, radix: int, min_length: int = 0) -> str:
     if len(result.lstrip("-")) < min_length: result = ("-" if is_negative else "") + result.lstrip("-").zfill(min_length)
     return result
 
-from scipy.special import iv, jv, kv, yv
-
 def BESSELI(x, n) -> float:
     """
     `=BESSELI(x, n)` Returns the modified Bessel function **In(x)**
@@ -855,18 +856,19 @@ def BESSELI(x, n) -> float:
 
     *Example Input*:
 
-        BESSELI(5, 2)   = 17.505614966624236
-        BESSELI(10, 0)  = 2815.7166284662544
-        BESSELI(3, 1)   = 3.95337021740261
-        BESSELI(1, 0)   = 1.2660658777520084
-        BESSELI(0.5, 0) = 1.0634833707413236
-        BESSELI(7, 3)   = 85.1754868428438
-        BESSELI(20, 5)  = 23018392.213413667
-        BESSELI(50, 2)  = 2.8164306402451954e+20
+        BESSELI(5, 2)   # 17.505614966624236
+        BESSELI(10, 0)  # 2815.7166284662544
+        BESSELI(3, 1)   # 3.95337021740261
+        BESSELI(1, 0)   # 1.2660658777520084
+        BESSELI(0.5, 0) # 1.0634833707413236
+        BESSELI(7, 3)   # 85.1754868428438
+        BESSELI(20, 5)  # 23018392.213413667
+        BESSELI(50, 2)  # 2.8164306402451954e+20
 
     `Returns (float) The calculated Bessel I_n(x) value.`
     """
-    return iv(n, x)
+    if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
+    else: return iv(n, x)
 
 def BESSELJ(x, n) -> float:
     """
@@ -878,16 +880,17 @@ def BESSELJ(x, n) -> float:
 
     *Example Input*:
 
-        BESSELJ(5, 2)   = 0.04656511627775229
-        BESSELJ(10, 0)  = -0.24593576445134832
-        BESSELJ(3, 1)   = 0.33905895852593626
-        BESSELJ(1, 0)   = 0.7651976865579666
-        BESSELJ(0.5, 0) = 0.938469807240813
-        BESSELJ(7, 3)   = -0.16755558799533432
-        BESSELJ(20, 5)  = 0.15116976798239493
-        BESSELJ(50, 2)  = -0.05971280079425883
+        BESSELJ(5, 2)   # 0.04656511627775229
+        BESSELJ(10, 0)  # -0.24593576445134832
+        BESSELJ(3, 1)   # 0.33905895852593626
+        BESSELJ(1, 0)   # 0.7651976865579666
+        BESSELJ(0.5, 0) # 0.938469807240813
+        BESSELJ(7, 3)   # -0.16755558799533432
+        BESSELJ(20, 5)  # 0.15116976798239493
+        BESSELJ(50, 2)  # -0.05971280079425883
     """
-    return jv(n, x)
+    if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
+    else: return jv(n, x)
 
 def BESSELK(x, n) -> float:
     """
@@ -899,16 +902,17 @@ def BESSELK(x, n) -> float:
 
     *Example Input*:
 
-       BESSELK(5, 2)   = 0.00530894371222346
-       BESSELK(10, 0)  = 1.778006231616765e-05
-       BESSELK(3, 1)   = 0.040156431128194184
-       BESSELK(1, 0)   = 0.42102443824070834
-       BESSELK(0.5, 0) = 0.9244190712276656
-       BESSELK(7, 3)   = 0.0007710751535668902
-       BESSELK(20, 5)  = 1.0538660139974233e-09
-       BESSELK(50, 2)  = 3.547931838858198e-23
+       BESSELK(5, 2)   # 0.00530894371222346
+       BESSELK(10, 0)  # 1.778006231616765e-05
+       BESSELK(3, 1)   # 0.040156431128194184
+       BESSELK(1, 0)   # 0.42102443824070834
+       BESSELK(0.5, 0) # 0.9244190712276656
+       BESSELK(7, 3)   # 0.0007710751535668902
+       BESSELK(20, 5)  # 1.0538660139974233e-09
+       BESSELK(50, 2)  # 3.547931838858198e-23
     """    
-    return kv(n, x)
+    if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
+    else: return kv(n, x)
 
 def BESSELY(x, n) -> float:
     """
@@ -920,17 +924,17 @@ def BESSELY(x, n) -> float:
 
     *Example Input*:
 
-     BESSELY(5, 2)    = 0.3676628826055246
-     BESSELY(10, 0)   = 0.05567116728359934
-     BESSELY(3, 1)    = 0.32467442479180014
-     BESSELY(1, 0)    = 0.088256964215677
-     BESSELY(0.5, 0)  = -0.44451873350670656
-     BESSELY(7, 3)    = 0.26808060304231507
-     BESSELY(20, 5)   = -0.10003576788953246
-     BESSELY(50, 2)   = 0.09579316872759651
+     BESSELY(5, 2)    # 0.3676628826055246
+     BESSELY(10, 0)   # 0.05567116728359934
+     BESSELY(3, 1)    # 0.32467442479180014
+     BESSELY(1, 0)    # 0.088256964215677
+     BESSELY(0.5, 0)  # -0.44451873350670656
+     BESSELY(7, 3)    # 0.26808060304231507
+     BESSELY(20, 5)   # -0.10003576788953246
+     BESSELY(50, 2)   # 0.09579316872759651
     """
-    return yv(n, x)
-
+    if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
+    else: return yv(n, x)
 
 def BIN2DEC(num: int | float | str) -> int:
     """
@@ -987,14 +991,58 @@ def BIN2OCT(num: int | float | str) -> int:
     `Any other String or Numbers except 0 or 1 return Error !`
     """
     bin_str = str(num).strip()
-    if not bin_str or any(ch not in "01" for ch in bin_str): raise ValueError("Input must be a binary number containing only 0 and 1.")
+    if not bin_str or any(ch not in "01" for ch in bin_str): raise ValueError("#VALUE! 🚫 Input must be a binary number containing only 0 and 1.")
     decimal_value = int(bin_str, 2)
     octal_str = format(decimal_value, "o")
     return octal_str
 
+def BETA_DIST(x: float, alpha: float, beta_param: float, cumulative: bool, A:float=0, B:float=1) -> float:
+    """
+    `=BETA.DIST(x, alpha, beta, cumulative, [A], [B])` Returns the beta probability distribution function
+    
+    Parameters:
+        x: Value at which to evaluate the function
+        alpha: Shape parameter α > 0
+        beta_param: Shape parameter β > 0
+        cumulative: True for CDF, False for PDF
+        A (optional): Lower bound of interval (default 0)
+        B (optional): Upper bound of interval (default 1)
+    
+    *Example Input*:
 
+     print(BETA_DIST(0.5, 2, 3, True))                 # 0.6875
+     print(BETA_DIST(0.5, 2, 3, False))                # 1.5000000000000004
+     print(BETA_DIST(7, 2, 3, True, A=0, B=10))        # 0.9163
+     print(BETA_DIST(7, 2, 3, False, A=0, B=10))       # 0.07559999999999999   
+    """
+    if B <= A: raise ValueError("#VALUE! 🚫 B must be greater than A")
+    if not (A <= x <= B): raise ValueError(f"#VALUE! 🚫 x must be between {A} and {B}")
+    z = (x - A) / (B - A)
+    if cumulative: return beta.cdf(z, alpha, beta_param)
+    else: return beta.pdf(z, alpha, beta_param) / (B - A)  
 
-from scipy.stats import binom
+def BETA_INV(probability: float, alpha: float, beta: float, A: float = 0, B: float = 1) -> float:
+    """
+    `=BETA.INV(probability, alpha, beta, [A], [B])` Returns the inverse of the beta cumulative distribution function for a specified probability.
+
+    Parameters:
+        probability: The probability (0 ≤ p ≤ 1)
+        alpha: Shape parameter α > 0
+        beta_param: Shape parameter β > 0
+        A (optional): Lower bound of interval (default 0)
+        B (optional): Upper bound of interval (default 1)
+
+    **Example Input**:
+
+        print(BETA_INV(0.5, 2, 3))               # 0.385727...
+        print(BETA_INV(0.95, 2, 3))              # 0.773...
+        print(BETA_INV(0.95, 2, 3, 0, 10))       # 7.732...
+
+    """
+    if B <= A: raise ValueError("#VALUE! 🚫 B must be greater than A")
+    if not (0 <= probability <= 1): raise ValueError("#VALUE! 🚫 probability must be between 0 and 1")
+    result = beta.ppf(probability, alpha, beta)
+    return A + result * (B - A)
 
 def BINOM_DIST(number_s: int, trials: int, probability_s: float, cumulative=True) -> float:
     """
