@@ -299,7 +299,188 @@ def ADDRESS(row_num: int, col_num: int, abs_num=1, a1=True, sheet_name=False) ->
         else: raise ValueError("🚫 #VALUE!")
         cell = r + c
     return sheet + cell
+
+def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden: pd.Series | np.ndarray | None = None, is_subtotal: pd.Series | np.ndarray | None = None) -> int | float:
+    """
+    `=AGGREGATE(function_num, options, array, [k])`
+    Full Excel-like AGGREGATE implemented using numpy/pandas/scipy.
+
+    Parameters:
+        function_num : int  (1..19)  - selects operation from AVERAGE..QUARTILE.EXC, check in examples :)
+        options      : int  (0..7)   - ignore controls:
+                       0 = ignore nothing, 1 = ignore hidden rows, 2 = ignore errors
+                       3 = ignore hidden rows & errors, 4 = ignore nested SUBTOTAL/AGGREGATE
+                       5 = ignore hidden rows & nested SUBTOTAL/AGGREGATE
+                       6 = ignore errors & nested SUBTOTAL/AGGREGATE
+                       7 = ignore hidden rows, errors, nested SUBTOTAL/AGGREGATE
+        array        : iterable (list / numpy array / pandas Series) of values (numbers or np.nan for errors)
+        k            : optional numeric, used by LARGE(14), SMALL(15), PERCENTILE/QUARTILE (16-19)
+        hidden       : optional boolean mask (same length as array). True = hidden row
+        is_subtotal  : optional boolean mask (same length as array). True = value produced by SUBTOTAL/AGGREGATE
+
+    Notes:
+        - Values that represent "errors" should be np.nan (or produced as np.nan).
+        - If options does NOT include 'ignore errors' and any np.nan remains, the function raises ValueError("#VALUE! 🚫 encountered error in data")
+        - For exact SUBTOTAL/AGGREGATE ignoring: pass `is_subtotal` mask marking those positions.
+        - For QUARTILE/PERCENTILE, `k` semantics:
+            * For PERCENTILE.INC (16) and PERCENTILE.EXC (18): k should be between 0..1 (fraction)
+            * For QUARTILE.INC (17) and QUARTILE.EXC (19): k should be 0..4 (quart index)
     
+    *Example*:
+
+     data = [82, 88, 91, 37, 56, 74, 82, 44, 95, 99, 70, 63, 56, 72, 84, 65, 88, 42, 77]
+
+     print("Average =", AGGREGATE(1, 6, data))                      # 71.84210526315789
+     print("Count =", AGGREGATE(2, 6, data))                        # 19
+     print("CountA =", AGGREGATE(3, 6, data))                       # 19
+     print("Max =", AGGREGATE(4, 6, data))                          # 99
+     print("Min =", AGGREGATE(5, 6, data))                          # 37
+     print("Product =", AGGREGATE(6, 6, data))                      # 9.439721027123594e+34
+     print("Sum =", AGGREGATE(9, 6, data))                          # 1365
+     print("Median =", AGGREGATE(10, 6, data))                      # 336.5847953216374
+     print("Large(1) =", AGGREGATE(14, 6, data, 1))                 # 99
+     print("Small(1) =", AGGREGATE(15, 6, data, 1))                 # 37
+     print("Stdev.S =", AGGREGATE(7, 6, data))                      # 18.346247445230794
+     print("Stdev.P =", AGGREGATE(8, 6, data))                      # 17.856925997891764
+     print("Var.S =", AGGREGATE(11, 6, data))                       # 318.8698060941828
+     print("Var.P =", AGGREGATE(12, 6, data))                       # 74
+     print("Mode =", AGGREGATE(13, 6, data))                        # 56
+     print("Percentile Inc (0.5) =", AGGREGATE(16, 6, data, 0.5))   # 74
+     print("Quartile Inc (1) =", AGGREGATE(17, 6, data, 1))         # 59.5
+     print("Percentile Exc (0.55) =", AGGREGATE(18, 6, data, 0.55)) # 77
+     print("Quartile Exc (1) =", AGGREGATE(19, 6, data, 1))         # 56
+    """
+    if not isinstance(function_num, int) or not (1 <= function_num <= 19): raise ValueError("#VALUE! 🚫 function_num must be integer 1..19")
+    if not isinstance(options, int) or not (0 <= options <= 7): raise ValueError("#VALUE! 🚫 options must be integer 0..7")
+    s = pd.Series(array).reset_index(drop=True)
+    n = len(s)
+    def _validate_mask(name, mask):
+        if mask is None: return pd.Series([False]*n)
+        mask_s = pd.Series(mask).reset_index(drop=True)
+        if len(mask_s) != n: raise ValueError(f"#VALUE! 🚫 {name} mask length must equal array length")
+        return mask_s.astype(bool)
+    hidden_mask = _validate_mask("hidden", hidden)
+    subtotal_mask = _validate_mask("is_subtotal", is_subtotal)
+    ignore_hidden = options in (1,3,5,7)
+    ignore_errors = options in (2,3,6,7)
+    ignore_subtotals = options in (4,5,6,7)
+    coerced = pd.to_numeric(s, errors='coerce')  
+    s = coerced
+    keep_mask = pd.Series([True]*n)
+    if ignore_hidden: keep_mask &= ~hidden_mask
+    if ignore_subtotals: keep_mask &= ~subtotal_mask
+    if ignore_errors: keep_mask &= ~s.isna()
+    data = s[keep_mask].to_numpy(dtype=float)
+    eff_mask = pd.Series([True]*n)
+    if ignore_hidden: eff_mask &= ~hidden_mask
+    if ignore_subtotals: eff_mask &= ~subtotal_mask
+    eff_data = s[eff_mask]
+    if (not ignore_errors) and eff_data.isna().any(): raise ValueError("#VALUE! 🚫 error value in array (set options to ignore errors)")
+    if data.size == 0:
+        if function_num in (2,3,9): return 0
+        if function_num == 6: return 1 
+        raise ValueError("#DIV/0! 🚫 no data to aggregate after applying options")
+    def _nanmean(x): return np.nanmean(x)
+    def _count(x): return int(np.count_nonzero(~np.isnan(x)))
+    def _counta(x): return int(np.count_nonzero(~pd.isnull(x)))
+    def _nanmax(x): return np.nanmax(x)
+    def _nanmin(x): return np.nanmin(x)
+    def _nanprod(x): return float(np.prod(x)) 
+    def _stdev_s(x): return float(np.nanstd(x, ddof=1))
+    def _stdev_p(x): return float(np.nanstd(x, ddof=0))
+    def _var_s(x): return float(np.nanvar(x, ddof=1))
+    def _var_p(x): return float(np.nanvar(x, ddof=0))
+    def _median(x): return float(np.nanmedian(x))
+    def _mode(x):
+        sr = pd.Series(x).dropna()
+        if sr.empty: raise ValueError("#N/A! 🚫 no mode")
+        modes = sr.mode()
+        if modes.empty: raise ValueError("#N/A! 🚫 no mode")
+        return float(modes.iloc[0])
+    def _large(x, kk):
+        arr = np.sort(x)[~np.isnan(np.sort(x))]
+        if kk is None: raise ValueError("#VALUE! 🚫 k is required for LARGE")
+        kk = int(kk)
+        if kk < 1 or kk > arr.size: raise ValueError("#NUM! 🚫 k out of range for LARGE")
+        return float(arr[::-1][kk-1])
+    def _small(x, kk):
+        arr = np.sort(x)[~np.isnan(np.sort(x))]
+        if kk is None: raise ValueError("#VALUE! 🚫 k is required for SMALL")
+        kk = int(kk)
+        if kk < 1 or kk > arr.size: raise ValueError("#NUM! 🚫 k out of range for SMALL")
+        return float(arr[kk-1])
+    def _percentile_inc(x, p):
+        if p is None: raise ValueError("#VALUE! 🚫 k is required for PERCENTILE.INC (fraction 0..1)")
+        p = float(p)
+        if not (0 <= p <= 1): raise ValueError("#NUM! 🚫 p must be between 0 and 1 for PERCENTILE.INC")
+        arr = np.sort(x[~np.isnan(x)])
+        if arr.size == 0: raise ValueError("#DIV/0! 🚫 no data")
+        n = arr.size
+        if p == 0: return float(arr[0])
+        if p == 1: return float(arr[-1])
+        rank = 1 + (n - 1) * p
+        lower = int(np.floor(rank)) - 1
+        upper = int(np.ceil(rank)) - 1
+        if lower == upper: return float(arr[lower])
+        frac = rank - (lower + 1)
+        return float(arr[lower] + frac * (arr[upper] - arr[lower]))
+    def _quartile_inc(x, q):
+        if q is None: raise ValueError("#VALUE! 🚫 k is required for QUARTILE.INC (0..4)")
+        q = int(q)
+        if not (0 <= q <= 4): raise ValueError("#NUM! 🚫 quart must be 0..4")
+        if q == 0: return _percentile_inc(x, 0.0)
+        if q == 4: return _percentile_inc(x, 1.0)
+        return _percentile_inc(x, q/4.0)
+    def _percentile_exc(x, p):
+        if p is None: raise ValueError("#VALUE! 🚫 k is required for PERCENTILE.EXC (fraction 0..1 exclusive)")
+        p = float(p)
+        n = np.count_nonzero(~np.isnan(x))
+        if n < 3: raise ValueError("#NUM! 🚫 PERCENTILE.EXC requires at least 3 data points")
+        if not (0 < p < 1): raise ValueError("#NUM! 🚫 p must be between 0 and 1 (exclusive) for PERCENTILE.EXC")
+        rank = p * (n + 1)
+        if rank <= 1 or rank >= n: raise ValueError("#NUM! 🚫 p out of range for PERCENTILE.EXC")
+        arr = np.sort(x[~np.isnan(x)])
+        lower = int(np.floor(rank)) - 1
+        upper = int(np.ceil(rank)) - 1
+        if lower == upper: return float(arr[lower])
+        frac = rank - (lower + 1)
+        return float(arr[lower] + frac * (arr[upper] - arr[lower]))
+    def _quartile_exc(x, q):
+        if q is None: raise ValueError("#VALUE! 🚫 k is required for QUARTILE.EXC (0..4)")
+        q = int(q)
+        if not (0 <= q <= 4): raise ValueError("#NUM! 🚫 quart must be 0..4")
+        if q == 0: return _percentile_exc(x, 0.0)  # Excel may error here; keep consistent
+        if q == 4: return _percentile_exc(x, 1.0)
+        return _percentile_exc(x, q/4.0)
+
+    fm = {
+        1: lambda x, kk=None: _nanmean(x),
+        2: lambda x, kk=None: _count(x),
+        3: lambda x, kk=None: _counta(x),
+        4: lambda x, kk=None: _nanmax(x),
+        5: lambda x, kk=None: _nanmin(x),
+        6: lambda x, kk=None: _nanprod(x),
+        7: lambda x, kk=None: _stdev_s(x),
+        8: lambda x, kk=None: _stdev_p(x),
+        9: lambda x, kk=None: float(np.nansum(x)),
+        10: lambda x, kk=None: _var_s(x),
+        11: lambda x, kk=None: _var_p(x),
+        12: lambda x, kk=None: _median(x),
+        13: lambda x, kk=None: _mode(x),
+        14: lambda x, kk=None: _large(x, kk),
+        15: lambda x, kk=None: _small(x, kk),
+        16: lambda x, kk=None: _percentile_inc(x, kk),
+        17: lambda x, kk=None: _quartile_inc(x, kk),
+        18: lambda x, kk=None: _percentile_exc(x, kk),
+        19: lambda x, kk=None: _quartile_exc(x, kk), }
+
+    func = fm.get(function_num)
+    if func is None: raise ValueError("#VALUE! 🚫 unsupported function_num")
+    result = func(data, k)
+    if isinstance(result, (np.floating, np.float64, np.float32)): return float(result)
+    if isinstance(result, (np.integer, np.int64, np.int32)): return int(result)
+    return result
+
 def AMORLINC(cost: float, date_purchased: str, first_period: str, salvage: float, period: int, rate: float, basis: int = 1) -> float:
     """
     `=AMORLINC(cost, date_purchased, first_period, salvage, period, rate, [basis])` Returns the **linear depreciation** for each accounting period using the French accounting system.
@@ -1133,7 +1314,7 @@ def BITOR(number1: int, number2: int) -> int:
 
 def BITLSHIFT(number: int, shift_amount: int) -> int:
     """
-    `=BITLSHIFT(number, shift_amount)` Returns a number shifted left by a given number of bits.
+    `=BITLSHIFT(number, shift_amount)` Returns a number **shifted left** by a given number of bits.
 
     *Example Input*:
 
@@ -1146,7 +1327,7 @@ def BITLSHIFT(number: int, shift_amount: int) -> int:
 
 def BITRSHIFT(number: int, shift_amount: int) -> int:
     """
-    `=BITRSHIFT(number, shift_amount)` Returns a number shifted right by a given number of bits.
+    `=BITRSHIFT(number, shift_amount)` Returns a number **shifted right** by a given number of bits.
 
     *Example Input*:
 
@@ -1171,5 +1352,3 @@ def BITXOR(number1: int, number2: int) -> int:
     return number1 ^ number2
 
 #C
-
-
