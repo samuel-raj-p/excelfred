@@ -1352,3 +1352,378 @@ def BITXOR(number1: int, number2: int) -> int:
     return number1 ^ number2
 
 #C
+from scipy import stats
+from scipy.special import comb
+
+def CEILING_MATH(number: int | float, significant: int | float = 1, mode: int = 0) -> float:
+    """
+    `=CEILING.MATH(number, [significant], [mode])`
+    Rounds a number up, to the nearest integer or the nearest multiple of significance.
+
+    Parameters:
+        number : The number to round
+        significant : Multiple to round to (default 1, must be > 0)
+        mode : int — For negative numbers: 
+                     0 = round away from zero (default)
+                     nonzero = round toward zero
+
+    *Example Input*:
+
+        print(CEILING_MATH(4.3))             # 5
+        print(CEILING_MATH(-4.3))            # -4
+        print(CEILING_MATH(-4.3, 2))         # -4
+        print(CEILING_MATH(-4.3, 2, 1))      # -2
+        print(CEILING_MATH(4.3, 2))          # 6
+        print(CEILING_MATH(4.3, 0.5))        # 4.5
+    """
+    if significant < 0: raise ValueError("#NUM! 🚫 significant must be positive")
+    if significant == 0: return 0.0
+    sign = np.sign(number) 
+    return np.floor(number / significant) * significant if sign < 0 and mode != 0 else np.ceil(np.abs(number) / significant) * significant * sign
+
+def CELL(info_type: str, reference) -> any:
+    """
+    `=CELL(info_type, reference)` Returns information about the formatting, location, or contents of the first cell, according to the sheet's reading order, in a reference .
+
+    **Parameters**:
+        **info_type**
+            The type of cell information you want to retrieve **(case-insensitive)** :
+                 "address"       → Returns the cell address as an absolute reference (e.g., "$B$2").
+                 "column"        → Returns the column number of the reference (A=1, B=2, ...).
+                 "contents"      → Returns the value/content of the reference cell.
+                 "format"        → Returns a code representing the cell's number format ("G" for General, "A" for Alphanumeric).
+                 "parentheses"   → Returns TRUE if the cell value is formatted with parentheses (negative values), FALSE otherwise.
+                 "prefix"        → Returns the label prefix of the cell ("'", "\"", "^", or "") used for text alignment in Excel.
+                 "protect"       → Returns TRUE if the cell is locked/protected (simulated TRUE).
+                 "row"           → Returns the row number of the reference (1-based).
+                 "type"          → Returns "b" if blank, "l" if label (text), "v" if value (number).
+                 "width"         → Returns the approximate column width (simulated as length of string representation).
+
+  
+
+        **reference** : scalar value, NumPy array element, or Pandas cell. (The cell to retrieve information from)
+
+    **Example Input**:
+
+        df = pd.DataFrame({"A":[10, 20, np.nan], "B":["x", "y", "z"]})
+        print(CELL("address", df.iloc[1,1]))        # "$B$2"
+        print(CELL("column", df.iloc[1,1]))         # 2
+        print(CELL("contents", df.iloc[1,1]))       # "y"
+        print(CELL("format", df.iloc[0,0]))         # "G"
+        print(CELL("parentheses", -50))             # True
+        print(CELL("prefix", "Hello"))              # "'"
+        print(CELL("protect", df.iloc[0,0]))        # True
+        print(CELL("row", df.iloc[1,1]))            # 2
+        print(CELL("type", df.iloc[0,0]))           # "v"
+        print(CELL("width", df.iloc[0,0]))          # 2
+
+    """
+    info_type = info_type.lower()
+    valid_info = {"address", "col", "contents", "format", "parentheses", "prefix", "protect", "row", "type", "width" }
+    if info_type not in valid_info: raise ValueError("#VALUE! 🚫 Invalid info_type")
+    if isinstance(reference, pd.Series):
+        if len(reference) != 1: raise ValueError("#VALUE! 🚫 reference must be 1 cell")
+        val = reference.iloc[0]; col_label = reference.name; row_label = reference.index[0]
+    elif isinstance(reference, pd.DataFrame):
+        if reference.shape != (1, 1): raise ValueError("#VALUE! 🚫 reference must be 1×1 DataFrame")
+        val = reference.iat[0, 0]; col_label = reference.columns[0]; row_label = reference.index[0]
+    else: val = reference; col_label = "A"; row_label = 1
+    def col_letter(col):
+        if isinstance(col, int): n = col
+        elif isinstance(col, str) and col.isalpha(): return col.upper()
+        else:
+            try: n = int(col) + 1
+            except: n = 1
+        letters = ""
+        while n > 0:
+            n, rem = divmod(n - 1, 26)
+            letters = chr(65 + rem) + letters
+        return letters
+    if info_type == "address": return f"${col_letter(col_label)}${row_label}"
+    elif info_type == "col": return (ord(col_letter(col_label)[0]) - 64)
+    elif info_type == "contents": return val
+    elif info_type == "format":
+        if isinstance(val, (int, float, np.number)): return "G"  # General
+        elif isinstance(val, str): return "@"
+        else: return "G"
+    elif info_type == "parentheses": return 1 if isinstance(val, (int, float, np.number)) and val < 0 else 0
+    elif info_type == "prefix":
+        if isinstance(val, str):
+            if val.startswith("'"): return "'"
+            elif val.startswith('"'): return '"'
+            else: return ""
+        return ""
+    elif info_type == "protect": return True
+    elif info_type == "row": return row_label if isinstance(row_label, int) else 1
+    elif info_type == "type":
+        if val is None or (isinstance(val, float) and np.isnan(val)): return "b"
+        elif isinstance(val, str): return "l"
+        else: return "v"
+    elif info_type == "width": return 8.43  
+    raise ValueError("#VALUE! 🚫 Unsupported info_type")
+
+def CHAR(number: int) -> str:
+    """
+    `=CHAR(number)` Returns the character specified by a number according to the ANSI/Unicode character set.
+
+    **Example Input**:
+
+        print(CHAR(65))    # "A"   → ANSI code 65 is uppercase A
+        print(CHAR(97))    # "a"   → ANSI code 97 is lowercase a
+        print(CHAR(48))    # "0"   → ANSI code 48 is digit zero
+        print(CHAR(36))    # "$"   → ANSI code 36 is dollar sign
+        print(CHAR(10))    # "\n"  → ANSI code 10 is line feed (newline)
+
+    `**Parameters**: An integer between 1 and 255 representing the ANSI code of the desired character.`
+
+    **Excel Notes**:
+        - On Windows, `CHAR()` uses the ANSI character set (code page 1252 by default).
+        - If you want to handle Unicode values above 255 in Excel, you must use `excelfred.UNICHAR()`.
+    """
+    if not isinstance(number, (int, np.integer)): raise ValueError("#VALUE! 🚫 number must be an integer")
+    if number < 1 or number > 255: raise ValueError("#VALUE! 🚫 number must be between 1 and 255")
+    return chr(number)
+
+def CHISQ_DIST(x: float, deg_freedom: int, cumulative: bool) -> float:
+    """
+    `=CHISQ.DIST(x, deg_freedom, cumulative)` Returns the **left-tailed** probability of the **chi-squared** distribution.
+
+    Parameters:
+        x : float → Value at which to evaluate the distribution (must be ≥ 0).
+        deg_freedom : int → Degrees of freedom (must be ≥ 1).
+        cumulative : bool → TRUE for cumulative distribution (CDF), FALSE for probability density (PDF).
+
+    *Example Input*:
+
+         print(CHISQ_DIST(0.5, 1, True))    # 0.5204998778
+         print(CHISQ_DIST(0.5, 1, False))   # 0.4393912895
+         print(CHISQ_DIST(2, 2, True))      # 0.6321205588
+         print(CHISQ_DIST(2, 2, False))     # 0.1839397206
+         print(CHISQ_DIST(5, 10, True))     # 0.0954659664
+    """
+    if x < 0: raise ValueError("#NUM! 🚫 x must be non-negative")
+    if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
+    if cumulative: return stats.chi2.cdf(x, deg_freedom)
+    else: return stats.chi2.pdf(x, deg_freedom)
+
+def CHISQ_DIST_RT(x: float, deg_freedom: int) -> float:
+    """
+    `=CHISQ.DIST.RT(x, deg_freedom)` Returns the **right-tailed** probability of the **chi-squared** distribution.
+
+    Parameters:
+        x : float → Value at which to evaluate (must be ≥ 0).
+        deg_freedom : int → Degrees of freedom (must be ≥ 1).
+
+    *Example Input*:
+
+         print(CHISQ_DIST_RT(0.5, 1))   # 0.4795001222
+         print(CHISQ_DIST_RT(2, 2))     # 0.3678794412
+         print(CHISQ_DIST_RT(5, 10))    # 0.9045340337
+         print(CHISQ_DIST_RT(15, 20))   # 0.8282028557
+         print(CHISQ_DIST_RT(30, 25))   # 0.2424253566
+    """
+    if x < 0: raise ValueError("#NUM! 🚫 x must be non-negative")
+    if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
+    return stats.chi2.sf(x, deg_freedom)
+
+def CHISQ_INV(prob: float, deg_freedom: int) -> float:
+    """
+    `=CHISQ.INV(prob, deg_freedom)` Returns the **inverse** of the **left-tailed** probability of the chi-squared distribution.
+
+    Parameters:
+        prob : float → Probability (0 < prob < 1).
+        deg_freedom : int → Degrees of freedom (must be ≥ 1).
+
+    *Example Input*:
+
+        print(CHISQ_INV(0.5204998778, 1))   # 0.49999999997030736
+        print(CHISQ_INV(0.6321205588, 2))   # 1.9999999998447435
+        print(CHISQ_INV(0.0954659664, 10))  # 4.793572111719336
+        print(CHISQ_INV(0.5, 5))            # 4.351460191
+        print(CHISQ_INV(0.9, 3))            # 6.251389
+    """
+    if not (0 < prob < 1): raise ValueError("#NUM! 🚫 prob must be between 0 and 1")
+    if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
+    return stats.chi2.ppf(prob, deg_freedom)
+
+def CHISQ_INV_RT(prob: float, deg_freedom: int) -> float:
+    """
+    `=CHISQ.INV.RT(prob, deg_freedom)` Returns the **inverse** of the **right-tailed** probability of the chi-squared distribution.
+
+    Parameters:
+        prob : float → Probability (0 < prob < 1).
+        deg_freedom : int → Degrees of freedom (must be ≥ 1).
+
+    *Example Input*:
+
+        print(CHISQ_INV_RT(0.4795001222, 1))  # 0.49999999997030786
+        print(CHISQ_INV_RT(0.3678794412, 2))  # 1.9999999998447444
+        print(CHISQ_INV_RT(0.9045340337, 10)) # 4.793572110121122
+        print(CHISQ_INV_RT(0.5, 5))           # 4.351460191
+        print(CHISQ_INV_RT(0.1, 3))           # 6.251389
+    """
+    if not (0 < prob < 1): raise ValueError("#NUM! 🚫 prob must be between 0 and 1")
+    if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
+    return stats.chi2.isf(prob, deg_freedom)
+
+def CHISQ_TEST(test_range, expected_range) -> float:
+    """
+    `=CHISQ.TEST(test_range, expected_range)` Returns the test for independence from the chi-squared distribution.
+
+    Parameters:
+        test_range : array-like → Observed data.
+        expected_range : array-like → Expected values.
+
+    *Example Input*:
+
+        observed = np.array([[10, 20, 30], [6,  9,  17]])
+        expected = np.array([[8,  18, 34], [8, 11, 13]])
+        print(CHISQ_TEST(observed, expected))  # 0.606
+    """
+    observed = np.array(test_range, dtype=float)
+    expected = np.array(expected_range, dtype=float)
+    if observed.shape != expected.shape: raise ValueError("#N/A 🚫 observed and expected ranges must have the same dimensions")
+    chi_sq = ((observed - expected) ** 2 / expected).sum()
+    df = (observed.shape[0] - 1) * (observed.shape[1] - 1)
+    return stats.chi2.sf(chi_sq, df)
+
+def CHOOSE(index_num: int, *values: any) -> any:
+    """
+    `=CHOOSE(index_num, val1, [val2], ..., [valN])` Returns the value from a list of values based on the given index.
+
+    Parameters:
+        index_num :
+            The position of the value to return. (1-based index, same as Excel)
+        *values :
+            One or more values among which to choose.
+
+    Raises:
+        ValueError: If index_num is not between 1 and len(values), or if index_num is not an integer.
+
+    *Example Input*:
+
+        print(CHOOSE(1, "Apple", "Banana", "Cherry"))   # Apple
+        print(CHOOSE(3, 10, 20, 30, 40))                # 30
+        print(CHOOSE(2, True, False))                   # False
+        print(CHOOSE(4, "A", "B", "C", "D", "E"))       # D
+        print(CHOOSE(1, 5.5, 6.6, 7.7))                 # 5.5
+    """
+    if not isinstance(index_num, (int, np.integer)): raise ValueError("#VALUE! 🚫 index_num must be an integer")
+    if index_num == 0: raise TypeError("#NUM! 🚫 Index in CHOOSE starts from 1, Unlike usual array format")
+    if index_num < 1 or index_num > len(values): raise ValueError("#VALUE! 🚫 index_num is out of range")
+    return values[index_num - 1]
+
+def CODE(text: str) -> int:
+    """
+    `=CODE(text)` Returns a numeric code for the first character of a text string.
+    In Excel, this is based on **ANSI/Unicode** codes depending on version.
+
+    *Example Input*:
+    
+        print(CODE("A"))       # 65   (ASCII for 'A')
+        print(CODE("a"))       # 97   (ASCII for 'a')
+        print(CODE("😀"))      # 128512 (Unicode for 😀)
+        print(CODE("Excel"))   # 69   (ASCII for 'E')
+        print(CODE("1"))       # 49   (ASCII for '1')
+
+    `Parameters: The text string from which to return the code of the first character.`
+    """
+    if not isinstance(text, str): raise ValueError("#VALUE! 🚫 text must be a string")
+    if text == "": raise ValueError("#VALUE! 🚫 text cannot be empty")
+    return ord(text[0])
+
+def COLUMN(reference: any) -> int | list:
+    """
+    `=COLUMN(reference)` Returns the **column number** of a reference
+
+    *Example Inputs*:
+
+     print("COLUMN('A') →", COLUMN('A'))                # 1
+     print("COLUMN('AA') →", COLUMN('AA'))              # 27
+     arr = np.array([[1, 2, 3], [4, 5, 6]])
+     print("COLUMN(arr) →", COLUMN(arr))                # [1, 2, 3] 
+
+     df = pd.DataFrame({ 'Name': ['Alice', 'Bob'],
+     'Age': [25, 30], 'City': ['NY', 'LA'] })
+     print("COLUMN(df) →", COLUMN(df))                  # [1, 2, 3]
+     print("COLUMN(df['City']) →", COLUMN(df['City']))  # 3
+
+    `Parameter - Accepts reference in dataframe, series, array, list formats `
+    """
+    if isinstance(reference, str):
+        reference = reference.strip().upper()
+        col_num = 0
+        for char in reference:
+            if not 'A' <= char <= 'Z': raise ValueError("#NUM! 🚫 Invalid column letter.")
+            col_num = col_num * 26 + (ord(char) - ord('A') + 1)
+        return col_num    
+    if isinstance(reference, pd.Series):
+        if reference.name is None: raise ValueError("#VALUE! 🚫 Series has no column name.")
+        col_names = reference.to_frame().columns.tolist()
+        return col_names.index(reference.name) + 1    
+    if isinstance(reference, pd.DataFrame): return list(range(1, len(reference.columns) + 1))    
+    if isinstance(reference, np.ndarray):
+        if reference.ndim == 1: return 1 
+        return list(range(1, reference.shape[1] + 1))
+    raise TypeError("#REF! 🚫 Unsupported reference type.")
+
+def COLUMNS(array: list | dict) -> int:
+    """
+    `=COLUMNS(array)` Returns the number of columns in an array or a reference
+
+    *Example Inputs*:
+
+     print("COLUMNS(df) =>", COLUMNS(pd.DataFrame({'A': [1,2,3],'B': [4,5,6], 'C': [7,8,9]})))  # 3
+     print("COLUMNS(lst) =>", COLUMNS([[1,2],[3,4]]))                                           # 2
+    
+    `Parameter - Accepts reference in dataframe, series, array, list formats `
+    """    
+    if isinstance(array, pd.DataFrame): return array.shape[1]
+    elif isinstance(array, pd.Series): return 1    
+    elif isinstance(array, np.ndarray): return 1 if array.ndim == 1 else array.shape[1] 
+    elif isinstance(array, list):
+        if len(array) == 0: return 0
+        elif isinstance(array[0], list): return len(array[0])
+        else: return 1
+    else: raise TypeError("#REF! 🚫 Unsupported type for COLUMNS function.")
+
+def COMBIN(number: int, number_chosen: int) -> int:
+    """
+    `=COMBIN(number, number_chosen)` Returns the **number of combinations** for a given number of items.
+
+    Parameters:
+        number         → Total number of items (n)
+        number_chosen  → Number of items to choose (k)
+
+    *Example Inputs*:
+
+         print(COMBIN(10, 2))    # 45
+         print(COMBIN(5, 3))     # 10
+         print(COMBIN(8, 0))     # 1
+         print(COMBIN(6, 6))     # 1
+         print(COMBIN(6, 1))     # 6
+    """
+    if not (isinstance(number, int) and isinstance(number_chosen, int)): raise ValueError("#VALUE! 🚫 Parameters must be integers.")
+    if number < 0 or number_chosen < 0: raise ValueError("#NUM! 🚫 Parameters must be non-negative.")
+    if number_chosen > number: raise ValueError("#NUM! 🚫 number_chosen cannot be greater than number.")
+    return int(comb(number, number_chosen, exact=True))
+
+def COMBINA(number: int, number_chosen: int) -> int:
+    """
+    `=COMBINA(number, number_chosen)` Returns the **number of combinations with repetitions** allowed.
+
+    `Parameters`:
+        number         → Total number of items (n)
+        number_chosen  → Number of items to choose (k)
+
+    *Example Inputs*:
+
+         print(COMBINA(10, 2))    # 55
+         print(COMBINA(5, 3))     # 35
+         print(COMBINA(8, 0))     # 1
+         print(COMBINA(6, 6))     # 462
+         print(COMBINA(6, 1))     # 6
+    """
+    if not (isinstance(number, int) and isinstance(number_chosen, int)): raise ValueError("#VALUE! 🚫 Parameters must be integers.")
+    if number <= 0 or number_chosen < 0: raise ValueError("#NUM! 🚫 number must be > 0 and number_chosen must be non-negative.")
+    return int(comb(number + number_chosen - 1, number_chosen, exact=True))
