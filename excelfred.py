@@ -1,12 +1,21 @@
 """
-excelfred alias "xl" - A Python package recreating Excel 514 functions
+excelfred (alias "xl") - A Python package recreating Excel 514 functions
 `Author: Samuel Raj P (FRED)` https://www.linkedin.com/in/samuel-raj23
 """
 
-#A
-import pandas as pd, numpy as np
+def __getattr__(name):
+    """
+    returns all function names starting with that letter in alphabetical order.
+    """
+    if len(name) == 1 and name.isalpha(): 
+        letter = name.upper(); funcs = []
+        for obj_name, obj_value in globals().items():
+            if callable(obj_value) and obj_name.upper().startswith(letter): funcs.append(obj_name)
+        return sorted(funcs) if funcs else f"No functions starting with '{letter}'"
+    raise AttributeError(f"module 'excelfred' has no attribute '{name}'")
 
-def ABS(*args: int | float | str) -> float:
+#A
+def ABS(*args: int | float | str) -> int | float:
     """**=ABS(number)** Returns an Absolute value of a number by taking Modulus. A number without its sign
     
     `Parameters: Only one # -> Number (but accepts arithmetics too) int | float | str`
@@ -33,7 +42,7 @@ def ABS(*args: int | float | str) -> float:
         return total
     except AssertionError as ae: raise ValueError(str(ae))
 
-def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: float = 15000.00, frequency: int = 1, basis: int = 0, calc_method: bool = True) -> float:
+def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: float = 15000.00, frequency: int = 1, basis: int = 0, calc_method: bool = True) -> int | float:
     """
     `=ACCRINT(issue, first_interest, settlement, rate, par, frequency, [basis], [calc_method])`
 
@@ -59,6 +68,7 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
     Returns:
         float: The accrued interest
     """
+    import pandas as pd
     try:
         issue_date = pd.to_datetime(issue, dayfirst=True)
         first_date = pd.to_datetime(first_interest, dayfirst=True)
@@ -68,10 +78,8 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
     if settle_date <= issue_date: raise ValueError("🚫 Settlement date must be after issue date.")
     if frequency not in [1, 2, 4]: raise ValueError("🚫 Frequency must be 1 (Annual), 2 (Semi-annual), or 4 (Quarterly).")
     if basis not in range(5): raise ValueError("🚫 Basis must be between 0 and 4.")
-
     start_date = issue_date if calc_method else first_date
     if settle_date <= start_date: raise ValueError("🚫 Settlement date must be after the start date based on calc_method.")
-
     delta_days = (settle_date - start_date).days
     if basis == 0 or basis == 4:
         d1 = start_date
@@ -94,7 +102,7 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
     accrued = par * rate * days / year_basis
     return accrued
 
-def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basis: int = 0) -> float:
+def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basis: int = 0) -> int | float:
     """
     `=ACCRINTM(issue, settlement maturity, rate, par, [basis])`
 
@@ -115,12 +123,12 @@ def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basi
     Returns:
         float: Accrued interest at maturity
     """
+    import pandas as pd
     try:
         issue_date = pd.to_datetime(issue, dayfirst=True)
         maturity_date = pd.to_datetime(maturity, dayfirst=True)
     except: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY'.")
     if maturity_date <= issue_date: raise ValueError("Logic Error: 🚫 Maturity date must be after the issue date.")
-
     delta_days = (maturity_date - issue_date).days
     if basis == 0 or basis == 4:
         d1 = issue_date; d2 = maturity_date
@@ -155,6 +163,7 @@ def ACOS(*args: int | float | str) -> float:
      print(ACOS(0.5+0.3))     # ➜ 0.927295218
 
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ACOS() requires one numeric input."
         if len(args) != 1: raise ValueError("Parameters Error: 🚫 ACOS() only takes one input.")
@@ -182,6 +191,7 @@ def ACOSH(*args: int | float | str) -> float:
      ACOSH(2 + 3)        # -> 2.2924316696
      ACOSH("5")          # -> 2.2924316696
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ACOSH() requires one numeric input."
         if len(args) != 1: raise ValueError("Parameters Error: 🚫 ACOSH() only takes one input.")
@@ -209,6 +219,7 @@ def ACOT(*args: int | float | str) -> float:
      ACOT(0)           # -> 1.5707963268
      ACOT(-5 + 2)      # -> 1.8925468812
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ACOT() requires one numeric input."
         if len(args) != 1: raise ValueError("Value Error: 🚫 ACOT() only takes one input.")
@@ -238,6 +249,7 @@ def ACOTH(*args: int | float | str) -> float:
      ACOTH(-1.5)        # -> -0.8047189562
      ACOTH("5 - 0.5")   # -> 0.2027325541
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ACOTH() requires one numeric input."
         if len(args) != 1: raise ValueError("Argument Error: 🚫 ACOTH() only takes one input.")
@@ -300,10 +312,9 @@ def ADDRESS(row_num: int, col_num: int, abs_num=1, a1=True, sheet_name=False) ->
         cell = r + c
     return sheet + cell
 
-def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden: pd.Series | np.ndarray | None = None, is_subtotal: pd.Series | np.ndarray | None = None) -> int | float:
+def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden: None = None, is_subtotal: None = None) -> float:
     """
-    `=AGGREGATE(function_num, options, array, [k])`
-    Full Excel-like AGGREGATE implemented using numpy/pandas/scipy.
+    `=AGGREGATE(function_num, options, array, [k])` Returns an **Aggregate** in a list or database.
 
     Parameters:
         function_num : int  (1..19)  - selects operation from AVERAGE..QUARTILE.EXC, check in examples :)
@@ -329,7 +340,6 @@ def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden
     *Example*:
 
      data = [82, 88, 91, 37, 56, 74, 82, 44, 95, 99, 70, 63, 56, 72, 84, 65, 88, 42, 77]
-
      print("Average =", AGGREGATE(1, 6, data))                      # 71.84210526315789
      print("Count =", AGGREGATE(2, 6, data))                        # 19
      print("CountA =", AGGREGATE(3, 6, data))                       # 19
@@ -350,6 +360,7 @@ def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden
      print("Percentile Exc (0.55) =", AGGREGATE(18, 6, data, 0.55)) # 77
      print("Quartile Exc (1) =", AGGREGATE(19, 6, data, 1))         # 56
     """
+    import pandas as pd, numpy as np
     if not isinstance(function_num, int) or not (1 <= function_num <= 19): raise ValueError("#VALUE! 🚫 function_num must be integer 1..19")
     if not isinstance(options, int) or not (0 <= options <= 7): raise ValueError("#VALUE! 🚫 options must be integer 0..7")
     s = pd.Series(array).reset_index(drop=True)
@@ -452,7 +463,6 @@ def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden
         if q == 0: return _percentile_exc(x, 0.0)  # Excel may error here; keep consistent
         if q == 4: return _percentile_exc(x, 1.0)
         return _percentile_exc(x, q/4.0)
-
     fm = {
         1: lambda x, kk=None: _nanmean(x),
         2: lambda x, kk=None: _count(x),
@@ -473,7 +483,6 @@ def AGGREGATE(function_num: int, options: int, array, k: float = None, *, hidden
         17: lambda x, kk=None: _quartile_inc(x, kk),
         18: lambda x, kk=None: _percentile_exc(x, kk),
         19: lambda x, kk=None: _quartile_exc(x, kk), }
-
     func = fm.get(function_num)
     if func is None: raise ValueError("#VALUE! 🚫 unsupported function_num")
     result = func(data, k)
@@ -505,6 +514,7 @@ def AMORLINC(cost: float, date_purchased: str, first_period: str, salvage: float
      print(AMORLINC(10000,"01-01-2020","31-12-2020",1000,2,0.2)) # -> 2000.0
     `Returns: float: Depreciation amount for the specified period`
     """
+    import pandas as pd
     try:
         purchase_date = pd.to_datetime(date_purchased, dayfirst=True)
         period_end = pd.to_datetime(first_period, dayfirst=True)
@@ -573,7 +583,6 @@ def ARABIC(input: str) -> int:
                        'X': 10, 'IX': 9, 'V': 5, 'IV': 4, 'I': 1 }
     if not isinstance(input, str): raise ValueError("🚫 #VALUE!") 
     input = input.upper()
-
     i = 0; result = 0
     valid_roman = ""
     def int_to_roman(n):
@@ -597,10 +606,22 @@ def ARABIC(input: str) -> int:
     return result
 
 def AREAS(*args) -> int:
+    """
+    `=AREAS(reference)` Returns the number of areas in a reference. An Area is a **range of contiguous cells** or a single cell
+    
+    *Example Inputs*:
+
+        print(AREAS('A1:B2'))                                   # 1 
+        print(AREAS('A1:B2, C3:D4'))                            # 2
+        print(AREAS(pd.DataFrame({"A": [1, 2], "B": [3, 4]})))  # 2 
+        print(AREAS(pd.Series([1, 2, 3])))                      # 1 
+    """
+    import pandas as pd, numpy as np
     total = 0
     for arg in args:
         if isinstance(arg, pd.DataFrame): total += len(arg.columns)
         elif isinstance(arg, pd.Series): total += 1
+        elif isinstance(arg, np.array): total += 1
         elif isinstance(arg, str):
             cleaned = arg.replace(" ", "")
             refs = cleaned.split(",")
@@ -626,7 +647,6 @@ def ARRAYTOTEXT(array, format=0) -> str:
      ARRAYTOTEXT([[1, 2], [3, 4], None], format=1)          # {"1,2";"3,4";""}
      ARRAYTOTEXT(pd.Series(["X", "Y", "Z"]), format=True)  # {"X";"Y";"Z"}
      ARRAYTOTEXT(np.array(["A", "B", "C"]), format=False)    # "A","B","C" 
-
     """
     rows = []
     def to_excel_val(val):
@@ -634,15 +654,12 @@ def ARRAYTOTEXT(array, format=0) -> str:
         if isinstance(val, bool): return "1" if format == 0 and val else ("0" if format == 0 else ('"1"' if val else '"0"'))
         if isinstance(val, (int, float)): return str(val) if format == 0 else f'"{val}"'
         return str(val) if format == 0 else f'"{val}"'
-
     if not isinstance(array, (list, tuple)): array = [[array]]
     elif all(not isinstance(row, (list, tuple)) for row in array): array = [array]
-
     for row in array:
         if not isinstance(row, (list, tuple)): row = [row]
         if format == 0: rows.append(f'"{",".join(to_excel_val(x) for x in row)}"')
         else: rows.append(";".join(to_excel_val(x) for x in row)) 
-
     if format == 0: return "[" + ",".join(rows) + "]"
     elif format==1: return "{" + ";".join(rows) + "}"
     else: raise ValueError("#VALUE!")
@@ -661,6 +678,7 @@ def ASIN(*args: int | float | str) -> float:
      ASIN("0.4+0.1")    # -> 0.5235987756
      ASIN(0.5+0.3)      # -> 0.927295218
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ASIN() requires one numeric input."
         if len(args) != 1: raise ValueError("Parameters Error: 🚫 ASIN() only takes one input.")
@@ -688,6 +706,7 @@ def ASINH(*args: int | float | str) -> float:
      ASINH("2 + 3")     # -> 2.3124383413
      ASINH(-5)          # -> -2.3124383413
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ASINH() requires one numeric input."
         if len(args) != 1: raise ValueError("Parameters Error: 🚫 ASINH() only takes one input.")
@@ -714,6 +733,7 @@ def ATAN(*args: int | float | str) -> float:
      ATAN("1/3")        # -> 0.3217505544
      ATAN(5 - 2)        # -> 1.2490457724
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ATAN() requires one numeric input."
         if len(args) != 1: raise ValueError("Parameters Error: 🚫 ATAN() only takes one input.")
@@ -740,6 +760,7 @@ def ATAN2(*args: int | float | str) -> float:
      ATAN2(-1, -1)        # -> -2.3561944902
      ATAN2("3", "4")      # -> 0.643501109
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ATAN2() requires two numeric inputs."
         if len(args) != 2: raise ValueError("Parameters Error: 🚫 ATAN2() requires exactly two inputs.")
@@ -767,6 +788,7 @@ def ATANH(*args: int | float | str) -> float:
      ATANH("0.8")        # -> 1.0986122887
      ATANH("-0.9")       # -> -1.4722194896
     """
+    import numpy as np
     try:
         assert args, "Value Error: 🚫 ATANH() requires one numeric input."
         if len(args) != 1: raise ValueError("Parameters Error: 🚫 ATANH() only takes one input.")
@@ -797,6 +819,7 @@ def AVEDEV(*args) -> float:
      print(AVEDEV([2*5, "12"], 14, "TRUE"))        # 4.125
      print(AVEDEV("apple", "banana"))              # 🚫 #DIV/0!
     """
+    import numpy as np
     values = []
     def extract_numbers(item):
         if isinstance(item, (list, tuple)):
@@ -804,7 +827,6 @@ def AVEDEV(*args) -> float:
                 extract_numbers(sub)
         elif isinstance(item, bool): values.append(1 if item else 0)
         elif isinstance(item, (int, float)): values.append(item)
-
         elif isinstance(item, str):
             s = item.strip()
             if not s: return
@@ -814,10 +836,8 @@ def AVEDEV(*args) -> float:
                 try: values.append(float(s))
                 except ValueError: pass
         elif item is None: pass
-
     for arg in args: extract_numbers(arg)
     if not values: raise ValueError("🚫 #DIV/0!")
-
     arr = np.array(values, dtype=float)
     mean_val = np.mean(arr)
     abs_dev = np.abs(arr - mean_val)
@@ -847,7 +867,6 @@ def AVERAGE(*args) -> float:
                 extract_numbers(sub)
         elif isinstance(item, bool): values.append(1 if item else 0)
         elif isinstance(item, (int, float)): values.append(item)
-
         elif isinstance(item, str):
             s = item.strip()
             if not s:  return
@@ -875,18 +894,17 @@ def AVERAGEA(*values) -> float:
      print(AVERAGEA([1, 2, "abc", True], False, None))    # (1 + 2 + 0 + 1 + 0) / 5 = 0.8
      print(AVERAGEA("apple", "banana"))                   # (0 + 0) / 2 = 0.0
     """
+    import numpy as np
     processed = []
     for v in values:
         if isinstance(v, (list, tuple, np.ndarray)): processed.extend(v)
         else: processed.append(v)
-
     converted = []
     for v in processed:
         if isinstance(v, bool): converted.append(1 if v else 0)
         elif isinstance(v, (int, float)) and not isinstance(v, bool): converted.append(v)     
         elif v is None: continue
         else: converted.append(0)
-
     if len(converted) == 0: return np.nan
     return np.mean(converted)
 
@@ -912,6 +930,7 @@ def AVERAGEIF(range_vals, criteria, average_range=None) -> float:
      print(AVERAGEIF([True, False, True], True, [10, 20, 30]))           # (10 + 30) / 2 = 20
      print(AVERAGEIF([1, 2, 3], ">5"))                                   # No match → NaN
     """
+    import pandas as pd, numpy as np
     range_vals = np.array(range_vals)
     if average_range is None: average_range = range_vals
     else: average_range = np.array(average_range)
@@ -943,6 +962,7 @@ def AVERAGEIFS(average_range, *criteria_pairs) -> float:
      print(AVERAGEIFS([10, 20, 30, 40], [2, 4, 6, 8], ">3", [1, 2, 3, 4], "<4"))   # (20 + 30) / 2 = 25
      print(AVERAGEIFS([100, 200, 300], [True, True, False], True))                 # (100 + 200) / 2 = 150
     """
+    import pandas as pd, numpy as np
     average_range = np.array(average_range)
     mask = np.ones(len(average_range), dtype=bool)
     
@@ -954,9 +974,6 @@ def AVERAGEIFS(average_range, *criteria_pairs) -> float:
     return np.mean(filtered) if len(filtered) > 0 else np.nan
 
 #B
-from scipy.special import iv, jv, kv, yv
-from scipy.stats import binom, beta
-
 def BAHTTEXT(number: int | float) -> str:
     """
     `=BAHTTEXT(number)` Converts a number to a text **(baht)**
@@ -1048,6 +1065,7 @@ def BESSELI(x, n) -> float:
 
     `Returns (float) The calculated Bessel I_n(x) value.`
     """
+    from scipy.special import iv
     if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
     else: return iv(n, x)
 
@@ -1070,6 +1088,7 @@ def BESSELJ(x, n) -> float:
         BESSELJ(20, 5)  # 0.15116976798239493
         BESSELJ(50, 2)  # -0.05971280079425883
     """
+    from scipy.special import jv
     if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
     else: return jv(n, x)
 
@@ -1092,6 +1111,7 @@ def BESSELK(x, n) -> float:
        BESSELK(20, 5)  # 1.0538660139974233e-09
        BESSELK(50, 2)  # 3.547931838858198e-23
     """    
+    from scipy.special import kv
     if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
     else: return kv(n, x)
 
@@ -1114,6 +1134,7 @@ def BESSELY(x, n) -> float:
      BESSELY(20, 5)   # -0.10003576788953246
      BESSELY(50, 2)   # 0.09579316872759651
     """
+    from scipy.special import yv
     if n<0: raise ValueError("#VALUE! 🚫 'n' should be above or equal to zero !")
     else: return yv(n, x)
 
@@ -1148,7 +1169,6 @@ def BIN2HEX(num) -> str:
      print(BIN2HEX(" 1111 "))  # 'F'
 
     `Any other String or Numbers except 0 or 1 return Error !`
-
     """
     if not isinstance(num, (int, str)): raise TypeError("#VALUE! 🚫 BIN2HEX accepts only int or str.")
     bin_str = str(num).strip()
@@ -1196,6 +1216,7 @@ def BETA_DIST(x: float, alpha: float, beta_param: float, cumulative: bool, A:flo
      print(BETA_DIST(7, 2, 3, True, A=0, B=10))        # 0.9163
      print(BETA_DIST(7, 2, 3, False, A=0, B=10))       # 0.07559999999999999   
     """
+    from scipy.stats import beta
     if B <= A: raise ValueError("#VALUE! 🚫 B must be greater than A")
     if not (A <= x <= B): raise ValueError(f"#VALUE! 🚫 x must be between {A} and {B}")
     z = (x - A) / (B - A)
@@ -1220,6 +1241,7 @@ def BETA_INV(probability: float, alpha: float, beta: float, A: float = 0, B: flo
         print(BETA_INV(0.95, 2, 3, 0, 10))       # 7.732...
 
     """
+    from scipy.stats import beta
     if B <= A: raise ValueError("#VALUE! 🚫 B must be greater than A")
     if not (0 <= probability <= 1): raise ValueError("#VALUE! 🚫 probability must be between 0 and 1")
     result = beta.ppf(probability, alpha, beta)
@@ -1240,6 +1262,7 @@ def BINOM_DIST(number_s: int, trials: int, probability_s: float, cumulative=True
      print(BINOM_DIST(2, 10, 0.5, False))  # 0.04394531250000004
      print(BINOM_DIST(2, 10, 0.5, True))   # 0.0546875
     """
+    from scipy.stats import binom
     if cumulative: return binom.cdf(number_s, trials, probability_s)
     else: return binom.pmf(number_s, trials, probability_s)
 
@@ -1258,6 +1281,7 @@ def BINOM_DIST_RANGE(trials: int, probability_s: float, num_s: int, num_s2: int 
          print(BINOM_DIST_RANGE(60, 0.75, 45))         # 0.11822800461154298
          print(BINOM_DIST_RANGE(60, 0.75, 45, 50))     # 0.5236297934718878
     """
+    from scipy.stats import binom
     if not (0 <= probability_s <= 1): raise ValueError("#VALUE! 🚫 probability_s must be between 0 and 1")
     if trials < 0 or num_s < 0 or (num_s2 is not None and num_s2 < 0): raise ValueError("#VALUE! 🚫 trials and successes must be non-negative integers")
     if num_s > trials or (num_s2 is not None and num_s2 > trials): raise ValueError("#VALUE! 🚫 successes cannot exceed number of trials")
@@ -1281,6 +1305,7 @@ def BINOM_INV(trials: int, probability_s: float, alpha: float) -> int:
          print(BINOM_INV(6, 0.5, 0.75))   # 4
          print(BINOM_INV(10, 0.3, 0.9))   # 5
     """
+    from scipy.stats import binom
     if not (0 <= probability_s <= 1): raise ValueError("#VALUE! 🚫 probability_s must be between 0 and 1")
     if not (0 <= alpha <= 1): raise ValueError("#VALUE! 🚫 alpha must be between 0 and 1")
     if trials < 0: raise ValueError("#VALUE! 🚫 trials must be non-negative integer")
@@ -1352,9 +1377,6 @@ def BITXOR(number1: int, number2: int) -> int:
     return number1 ^ number2
 
 #C
-from scipy import stats
-from scipy.special import comb
-
 def CEILING_MATH(number: int | float, significant: int | float = 1, mode: int = 0) -> float:
     """
     `=CEILING.MATH(number, [significant], [mode])`
@@ -1376,6 +1398,7 @@ def CEILING_MATH(number: int | float, significant: int | float = 1, mode: int = 
         print(CEILING_MATH(4.3, 2))          # 6
         print(CEILING_MATH(4.3, 0.5))        # 4.5
     """
+    import numpy as np
     if significant < 0: raise ValueError("#NUM! 🚫 significant must be positive")
     if significant == 0: return 0.0
     sign = np.sign(number) 
@@ -1418,6 +1441,7 @@ def CELL(info_type: str, reference) -> any:
         print(CELL("width", df.iloc[0,0]))          # 2
 
     """
+    import pandas as pd, numpy as np
     info_type = info_type.lower()
     valid_info = {"address", "col", "contents", "format", "parentheses", "prefix", "protect", "row", "type", "width" }
     if info_type not in valid_info: raise ValueError("#VALUE! 🚫 Invalid info_type")
@@ -1480,6 +1504,7 @@ def CHAR(number: int) -> str:
         - On Windows, `CHAR()` uses the ANSI character set (code page 1252 by default).
         - If you want to handle Unicode values above 255 in Excel, you must use `excelfred.UNICHAR()`.
     """
+    import numpy as np
     if not isinstance(number, (int, np.integer)): raise ValueError("#VALUE! 🚫 number must be an integer")
     if number < 1 or number > 255: raise ValueError("#VALUE! 🚫 number must be between 1 and 255")
     return chr(number)
@@ -1501,6 +1526,7 @@ def CHISQ_DIST(x: float, deg_freedom: int, cumulative: bool) -> float:
          print(CHISQ_DIST(2, 2, False))     # 0.1839397206
          print(CHISQ_DIST(5, 10, True))     # 0.0954659664
     """
+    from scipy import stats
     if x < 0: raise ValueError("#NUM! 🚫 x must be non-negative")
     if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
     if cumulative: return stats.chi2.cdf(x, deg_freedom)
@@ -1522,6 +1548,7 @@ def CHISQ_DIST_RT(x: float, deg_freedom: int) -> float:
          print(CHISQ_DIST_RT(15, 20))   # 0.8282028557
          print(CHISQ_DIST_RT(30, 25))   # 0.2424253566
     """
+    from scipy import stats
     if x < 0: raise ValueError("#NUM! 🚫 x must be non-negative")
     if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
     return stats.chi2.sf(x, deg_freedom)
@@ -1542,6 +1569,7 @@ def CHISQ_INV(prob: float, deg_freedom: int) -> float:
         print(CHISQ_INV(0.5, 5))            # 4.351460191
         print(CHISQ_INV(0.9, 3))            # 6.251389
     """
+    from scipy import stats
     if not (0 < prob < 1): raise ValueError("#NUM! 🚫 prob must be between 0 and 1")
     if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
     return stats.chi2.ppf(prob, deg_freedom)
@@ -1562,6 +1590,7 @@ def CHISQ_INV_RT(prob: float, deg_freedom: int) -> float:
         print(CHISQ_INV_RT(0.5, 5))           # 4.351460191
         print(CHISQ_INV_RT(0.1, 3))           # 6.251389
     """
+    from scipy import stats
     if not (0 < prob < 1): raise ValueError("#NUM! 🚫 prob must be between 0 and 1")
     if deg_freedom < 1: raise ValueError("#NUM! 🚫 degrees of freedom must be ≥ 1")
     return stats.chi2.isf(prob, deg_freedom)
@@ -1580,6 +1609,8 @@ def CHISQ_TEST(test_range, expected_range) -> float:
         expected = np.array([[8,  18, 34], [8, 11, 13]])
         print(CHISQ_TEST(observed, expected))  # 0.606
     """
+    import numpy as np
+    from scipy import stats
     observed = np.array(test_range, dtype=float)
     expected = np.array(expected_range, dtype=float)
     if observed.shape != expected.shape: raise ValueError("#N/A 🚫 observed and expected ranges must have the same dimensions")
@@ -1608,6 +1639,7 @@ def CHOOSE(index_num: int, *values: any) -> any:
         print(CHOOSE(4, "A", "B", "C", "D", "E"))       # D
         print(CHOOSE(1, 5.5, 6.6, 7.7))                 # 5.5
     """
+    import numpy as np
     if not isinstance(index_num, (int, np.integer)): raise ValueError("#VALUE! 🚫 index_num must be an integer")
     if index_num == 0: raise TypeError("#NUM! 🚫 Index in CHOOSE starts from 1, Unlike usual array format")
     if index_num < 1 or index_num > len(values): raise ValueError("#VALUE! 🚫 index_num is out of range")
@@ -1650,6 +1682,7 @@ def COLUMN(reference: any) -> int | list:
 
     `Parameter - Accepts reference in dataframe, series, array, list formats `
     """
+    import pandas as pd, numpy as np
     if isinstance(reference, str):
         reference = reference.strip().upper()
         col_num = 0
@@ -1678,6 +1711,7 @@ def COLUMNS(array: list | dict) -> int:
     
     `Parameter - Accepts reference in dataframe, series, array, list formats `
     """    
+    import pandas as pd, numpy as np
     if isinstance(array, pd.DataFrame): return array.shape[1]
     elif isinstance(array, pd.Series): return 1    
     elif isinstance(array, np.ndarray): return 1 if array.ndim == 1 else array.shape[1] 
@@ -1703,6 +1737,7 @@ def COMBIN(number: int, number_chosen: int) -> int:
          print(COMBIN(6, 6))     # 1
          print(COMBIN(6, 1))     # 6
     """
+    from scipy.special import comb
     if not (isinstance(number, int) and isinstance(number_chosen, int)): raise ValueError("#VALUE! 🚫 Parameters must be integers.")
     if number < 0 or number_chosen < 0: raise ValueError("#NUM! 🚫 Parameters must be non-negative.")
     if number_chosen > number: raise ValueError("#NUM! 🚫 number_chosen cannot be greater than number.")
@@ -1724,6 +1759,216 @@ def COMBINA(number: int, number_chosen: int) -> int:
          print(COMBINA(6, 6))     # 462
          print(COMBINA(6, 1))     # 6
     """
+    from scipy.special import comb
     if not (isinstance(number, int) and isinstance(number_chosen, int)): raise ValueError("#VALUE! 🚫 Parameters must be integers.")
     if number <= 0 or number_chosen < 0: raise ValueError("#NUM! 🚫 number must be > 0 and number_chosen must be non-negative.")
     return int(comb(number + number_chosen - 1, number_chosen, exact=True))
+
+def COMPLEX(real_num: float, img_num: float, suffix: str="i") -> str:
+    """
+    `=COMPLEX(real_num, i_num, [suffix])` Converts real and imaginary **co-efficients** into complex numbers
+
+    Parameters:
+        real_num: 
+            All Natural numbers
+        imaginary_num: 
+            ends with i (denoted as root of -1)
+        [suffix]: (optional)
+            Imaginary number unit ends with either 'i' or 'j'
+
+    *Example Inputs*:
+    
+     print(COMPLEX(3, 4))          # 3+4i
+     print(COMPLEX(0, -2))         # 0-2i
+     print(COMPLEX(-5, 0))         # -5+0i
+     print(COMPLEX(0, 0))          # 0+0i
+     print(COMPLEX(2.5, 3.7, "j")) # 2.5+3.7j
+    """
+    import numpy as np
+    if suffix not in ("i", "j"): raise ValueError("#VALUE! 🚫 Suffix must be 'i' or 'j'")
+    if np.isnan(real_num) or np.isnan(img_num): return np.nan
+    if real_num == 0 and img_num == 0: return f"0{suffix}"
+    real_str = str(int(real_num)) if real_num == int(real_num) else str(real_num)
+    imag_str = str(abs(int(img_num)) if img_num == int(img_num) else abs(img_num))    
+    sign = "+" if img_num >= 0 else "-"
+    return f"{real_str}{sign}{imag_str}{suffix}"
+
+def CONCAT(*args: any) -> str:
+    """
+    `=CONCAT(text1, ...)` **Concatenates** a list or a range of text strings.
+
+    *Example Inputs*:
+
+     print(CONCAT("excel","fred"))                         # excelfred
+     print(CONCAT(1, 2, 3))                                # 123
+     print(CONCAT(True, False))                            # TRUEFALSE
+     print(CONCAT(np.array([1, None, "X"])))               # 1X
+     print(CONCAT(pd.Series([1, np.nan, 3])))              # 13
+     print(CONCAT(range(3)," ", "Done"))                   # 012 Done
+
+    `parameters - accepts any type of list arrays series ranges that in integer/float/string `
+    """
+    import numpy as np, pandas as pd
+    result_parts = []
+    for arg in args:
+        if isinstance(arg, (pd.Series, pd.DataFrame)): values = arg.values.flatten()
+        elif isinstance(arg, (np.ndarray, list, tuple, set, range)): values = np.array(arg, dtype=object).flatten()
+        else: values = [arg]
+        for v in values:
+            if v is None or (isinstance(v, float) and pd.isna(v)): continue
+            if isinstance(v, bool): result_parts.append("TRUE" if v else "FALSE")
+            else: result_parts.append(str(v))
+    return "".join(result_parts)
+
+def CONFIDENCE_NORM(alpha, std_dev, size) -> float:
+    """
+    `=CONFIDENCE.NORM(alpha, std_dev, size)`
+
+    **Parameter**:
+        **Alpha(α)**: 
+            Significance level (probability of error, e.g., 0.05 for 95% confidence)
+        **Standard Deviation**:
+            Standard deviation of the Population (sigma)
+        **Size(n)**: 
+            Number of observations (AKA sample size)
+
+    Example Inputs:
+
+    print(CONFIDENCE.NORM(0.05,2.5,50))   # 0.6929519121748389
+    """
+    import numpy as np; from scipy import stats
+    if isinstance(alpha, str) or isinstance(std_dev, str) or isinstance(size, str): raise ValueError(f"🚫 String Error: Invalid Datatype, Enter float or int instead.")
+    if size <= 0 or std_dev < 0: raise ValueError("size must be > 0 and std_dev >= 0")
+    z = stats.norm.ppf(1 - alpha / 2)  
+    return z * (std_dev / np.sqrt(size))
+
+def CONFIDENCE_T(alpha, std_dev, size):
+    """
+    `=CONFIDENCE.T(alpha, std_dev, size)`
+
+    **Parameter**:
+        **Alpha(α)**: 
+            Significance level (probability of error, e.g., 0.05 for 95% confidence)
+        **Standard Deviation**:
+            Standard deviation of the sample.
+        **Size(n)**: 
+            Number of observations (AKA sample size)
+
+    Example Inputs:
+
+     print(CONFIDENCE.T(0.05,2.5,50))   # 0.7104921387393247
+    """
+    import numpy as np; from scipy import stats
+    if isinstance(alpha, str) or isinstance(std_dev, str) or isinstance(size, str): raise ValueError(f"🚫 String Error: Invalid Datatype, Enter float or int instead.")
+    if size <= 1 or std_dev < 0: raise ValueError("size must be > 1 and std_dev >= 0")
+    t = stats.t.ppf(1 - alpha / 2, df=size - 1)  
+    return t * (std_dev / np.sqrt(size))    
+
+def CONVERT(number: float, from_unit: str, to_unit: str) -> float:
+    """
+    `=CONVERT(num, from_unit, to_unit)` Converts a number from one **measurement system** to another.
+
+    **Supported Units**:
+    `Length: m, km, cm, mm, um, nm, pm, fm, in, ft, yd, mi, nmi, ang, ly, pc, fath, ch, rd`
+    `Mass: g, kg, mg, ug, st, lbm, oz, t, ton, cwt`
+    `Volume: l, ml, m3, ft3, in3, gal, qt, pt, cup, floz`
+    `Time: s, min, hr, day, yr, mo`
+    `Pressure: pa, atm, bar, torr, psi`
+    `Energy: j, kj, cal, kcal, wh, kwh, ev, btu`
+    `Power: w, kw, mw, hp`
+    `Area: m2, km2, cm2, mm2, ft2, yd2, in2, ac, ha`
+    `Angle: rad, deg, grad, gon`
+    `Temperature: c, f, k, r`
+         
+    **Parameter**:
+     Number:
+        The numeric value you want to convert from one measurement system to another.
+        (Example: 10 for 10 meters)
+     From_Unit:
+        The text abbreviation of the unit you are converting from.
+        (Example: "m" for meters, "lbm" for pounds mass)
+     To_Unit:
+        The text abbreviation of the unit you are converting to.
+        (Example: "ft" for feet, "kg" for kilograms)
+
+    *Example Inputs*:
+    
+        print(CONVERT(20, 'cwt', 'kg'))                   # 907.18474
+        print(CONVERT(20, 'cwt', 'g'))                    # 907184.74
+        print(CONVERT(2204.622621848776, 'g', 'lbm'))     # ~4.8573561563
+        print(CONVERT(100, 'km', 'm'))                    # 100000
+        print(CONVERT(5, 'mi', 'km'))                     # 8.04672
+        print(CONVERT(1, 'ft', 'm'))                      # 0.3048
+        print(CONVERT(12, 'in', 'cm'))                    # 30.48
+        print(CONVERT(2, 'yd', 'm'))                      # 1.8288
+        print(CONVERT(1, 'ly', 'm'))                      # 9.4607e+15
+        print(CONVERT(3, 'pc', 'ly'))                     # 9.7821
+        print(CONVERT(60, 'min', 's'))                    # 3600
+        print(CONVERT(1, 'hr', 'min'))                    # 60
+        print(CONVERT(1, 'day', 'hr'))                    # 24
+        print(CONVERT(101325, 'pa', 'atm'))               # 1
+        print(CONVERT(14.7, 'psi', 'pa'))                 # ~101352.83
+        print(CONVERT(500, 'cal', 'j'))                   # 2092
+        print(CONVERT(1, 'hp', 'w'))                      # 745.6998715822702
+        print(CONVERT(300, 'kg', 'g'))                    # 300000
+
+        # Area units
+        print(CONVERT(10000, 'm2', 'ac'))                 # ~2.47105381
+        print(CONVERT(2, 'km2', 'm2'))                    # 2,000,000
+        print(CONVERT(500, 'cm2', 'm2'))                  # 0.05
+        print(CONVERT(100, 'ft2', 'm2'))                  # 9.290304
+        print(CONVERT(1, 'ha', 'm2'))                     # 10000
+
+        # Angle units
+        print(CONVERT(180, 'deg', 'rad'))                 # 3.141592653589793 (pi)
+        print(CONVERT(200, 'grad', 'deg'))                # 180
+        print(CONVERT(100, 'gon', 'rad'))                 # 1.5707963267948966 (pi/2)
+        print(CONVERT(3.141592653589793, 'rad', 'deg'))   # 180
+
+        # Temperature
+        print(CONVERT(0, 'c', 'f'))                       # 32
+        print(CONVERT(32, 'f', 'c'))                      # 0
+        print(CONVERT(0, 'k', 'c'))                       # -273.15
+        print(CONVERT(491.67, 'r', 'f'))                  # 32 
+    """
+    length_units = {"m":1,"km":1000,"cm":0.01,"mm":0.001,"um":1e-6,"nm":1e-9,"pm":1e-12,"fm":1e-15, "in":0.0254,"ft":0.3048,"yd":0.9144,"mi":1609.344,"nmi":1852,"ang":1e-10, "ly":9.4607e15,"pc":3.0857e16,"fath":1.8288,"ch":20.1168,"rd":5.0292 }
+    mass_units = {"g":1,"kg":1000,"mg":0.001,"ug":1e-6,"st":6350.29318,"lbm":453.59237,"oz":28.349523125, "t":1e6,"ton":907184.74,"cwt":45359.237  }
+    volume_units = {"l":1,"ml":0.001,"m3":1000,"ft3":28.316846592,"in3":0.016387064, "gal":3.785411784,"qt":0.946352946,"pt":0.473176473,"cup":0.24,"floz":0.0295735295625 }
+    time_units = {"s":1,"min":60,"hr":3600,"day":86400,"yr":31557600,"mo":2629800}
+    pressure_units = {"pa":1,"atm":101325,"bar":100000,"torr":133.322368,"psi":6894.757293168}
+    energy_units = {"j":1,"kj":1000,"cal":4.184,"kcal":4184,"wh":3600,"kwh":3.6e6,"ev":1.60218e-19,"btu":1055.06}
+    power_units = {"w":1,"kw":1000,"mw":1e6,"hp":745.69987158227022}
+    area_units = {"m2":1,"km2":1e6,"cm2":1e-4,"mm2":1e-6,"ft2":0.09290304,"yd2":0.83612736, "in2":0.00064516,"ac":4046.8564224,"ha":10000 }
+    angle_units = {"rad":1,"deg":0.0174532925199433,"grad":0.015707963267948967,"gon":0.015707963267948967}
+    aliases = {"lb": "lbm", "lbs": "lbm", "liter": "l", "litre": "l", "meters": "m", "metre": "m", "metres": "m", "seconds": "s", "sec": "s", "hrs": "hr", "hour": "hr", "hours": "hr", "degrees": "deg", "radians": "rad", "gallons": "gal", "pounds": "lbm", "tons": "ton", "tons_us": "ton", "tons_uk": "t", "acres": "ac", "stone": "stone", "oz": "ozm", "grain": "grain", "u": "u", "cwt": "cwt", "shweight": "cwt", "uk_cwt": "uk_cwt", "lcwt": "uk_cwt", "hweight": "uk_cwt", "ton": "ton", "uk_ton": "uk_ton", "LTON": "uk_ton", "brton": "uk_ton", "mi": "mi", "nmi": "nmi", "in": "in", "ft": "ft", "yd": "yd", "ang": "ang", "ell": "ell", "ly": "ly", "parsec": "pc", "pc": "pc", "Picapt": "pica", "Pica": "pica", "pica": "pica", "survey_mi": "survey_mi", "yr": "yr", "day": "day", "d": "day", "hr": "hr", "mn": "min", "min": "min", "sec": "s", "atm": "atm", "at": "atm", "mmHg": "mmHg", "psi": "psi", "kg": "kg", "g": "g", "mg": "mg", "ug": "ug", "st": "st", "lbm": "lbm", "ozm": "ozm", "grain": "grain", "u": "u", "cwt": "cwt", "shweight": "cwt", "uk_cwt": "uk_cwt", "lcwt": "uk_cwt", "hweight": "uk_cwt", "ton": "ton", "uk_ton": "uk_ton", "LTON": "uk_ton", "brton": "uk_ton", "mi": "mi", "nmi": "nmi", "in": "in", "ft": "ft", "yd": "yd", "ang": "ang", "ell": "ell", "ly": "ly", "parsec": "pc", "pc": "pc", "Picapt": "pica", "Pica": "pica", "pica": "pica", "survey_mi": "survey_mi", "yr": "yr", "day": "day", "d": "day", "hr": "hr", "mn": "min", "min": "min", "sec": "s", "atm": "atm", "at": "atm", "mmHg": "mmHg", "psi": "psi", "kg": "kg", "g": "g", "mg": "mg", "ug": "ug", "st": "st", "lbm": "lbm", "ozm": "ozm", "grain": "grain", "u": "u", "cwt": "cwt", "shweight": "cwt", "uk_cwt": "uk_cwt", "lcwt": "uk_cwt", "hweight": "uk_cwt", "ton": "ton", "uk_ton": "uk_ton", "LTON": "uk_ton", "brton": "uk_ton", "mi": "mi", "nmi": "nmi", "in": "in", "ft": "ft", "yd": "yd", "ang": "ang", "ell": "ell", "ly": "ly", "parsec": "pc", "pc": "pc", "Picapt": "pica", "Pica": "pica", "pica": "pica", "survey_mi": "survey_mi", "yr": "yr", "day": "day", "d": "day", "hr": "hr", "mn": "min", "min": "min", "sec": "s", "atm": "atm", "at": "atm", "mmHg": "mmHg", "psi": "psi", "kg": "kg", "g": "g", "mg": "mg", "ug": "ug", "st": "st", "lbm": "lbm", "ozm": "ozm", "grain": "grain", "u": "u", "cwt": "cwt", "shweight": "cwt", "uk_cwt": "uk_cwt", "lcwt": "uk_cwt", "hweight": "uk_cwt", "ton": "ton", "uk_ton": "uk_ton", "LTON": "uk_ton", "brton": "uk_ton", "mi": "mi", "nmi": "nmi", "in": "in", "ft": "ft", "yd": "yd", "ang": "ang", "ell": "ell", "ly": "ly", "parsec": "pc", "pc": "pc", "Picapt": "pica", "Pica": "pica", "pica": "pica", "survey_mi": "survey_mi", "yr": "yr", "day": "day", "d": "day", "hr": "hr", "mn": "min", "min": "min", "sec": "s", "atm": "atm", "at": "atm", "mmHg": "mmHg", "psi": "psi", "kg": "kg", "g": "g", "mg": "mg", "ug": "ug", "st": "st", "lbm": "lbm", "ozm": "ozm", "grain": "grain", "u": "u", "cwt": "cwt", "shweight": "cwt", "uk_cwt": "uk_cwt", "lcwt": "uk_cwt", "hweight": "uk_cwt", "ton": "ton", "uk_ton": "uk_ton", "LTON": "uk_ton", "brton": "uk_ton", "mi": "mi", "nmi": "nmi", "in": "in", "ft": "ft", "yd": "yd", "ang": "ang", "ell": "ell", "ly": "ly", "parsec": "pc", "pc": "pc", "Picapt": "pica", "Pica": "pica", "pica": "pica", "survey_mi": "survey_mi", "yr": "yr", "day": "day", "d": "day", "hr": "hr", "mn": "min", "min": "min", "sec": "s", "atm": "atm", "at": "atm", "mmHg": "mmHg", "psi": "psi", "kg": "kg", "g": "g", "mg": "mg", "ug": "ug", "st": "st", "lbm": "lbm", "ozm": "ozm", "grain": "grain", "u": "u", "cwt": "cwt", "shweight": "cwt", "uk_cwt": "uk_cwt", "lcwt": "uk_cwt", "hweight": "uk_cwt", "ton": "ton", "uk_ton": "uk_ton", "LTON": "uk_ton", "brton": "uk_ton", "mi": "mi", "nmi": "nmi", "in": "in", "ft": "ft", "yd": "yd", "ang": "ang", "ell": "ell", "ly": "ly", "parsec": "pc", "pc": "pc", "Picapt": "pica", "Pica": "pica", "pica": "pica", "survey_mi": "survey_mi", "yr": "yr", "day": "day", "d": "day", "hr": "hr", "mn": "min", "min": "min", "sec": "s", "atm": "atm", "at": "atm", "mmHg": "mmHg", "psi": "psi"}
+    temperature_units = {"c","f","k","r"}
+    def convert_temperature(value, from_u, to_u):
+        if from_u == to_u: return value
+        if from_u == "c": c = value
+        elif from_u == "f": c = (value - 32) * 5/9
+        elif from_u == "k": c = value - 273.15
+        elif from_u == "r": c = (value - 491.67) * 5/9
+        else: raise ValueError(f"#N/A 🚫 Unknown temperature unit '{from_u}'")
+        if to_u == "c": return c
+        elif to_u == "f": return c * 9/5 + 32
+        elif to_u == "k": return c + 273.15
+        elif to_u == "r": return (c + 273.15) * 9/5
+        else: raise ValueError(f"#N/A 🚫 Unknown temperature unit '{to_u}'")
+    from_unit = from_unit.strip().lower(); to_unit = to_unit.strip().lower()
+    if from_unit == to_unit: return float(number)    
+    if from_unit in aliases: from_unit = aliases[from_unit]
+    if to_unit in aliases: to_unit = aliases[to_unit]
+    if from_unit == to_unit: return float(number)
+    if from_unit in temperature_units and to_unit in temperature_units: return convert_temperature(number, from_unit, to_unit)
+    all_categories = [  length_units, mass_units, volume_units, time_units,
+                        pressure_units, energy_units, power_units, area_units, angle_units ]
+    def find_category(unit):
+        for cat in all_categories:
+            if unit in cat: return cat
+        return None
+    from_cat = find_category(from_unit); to_cat = find_category(to_unit)
+    if from_cat is None or to_cat is None: raise ValueError(f"#N/A 🚫 Unknown unit '{from_unit}' or '{to_unit}'")
+    if from_cat != to_cat: raise ValueError(f"#N/A 🚫 Incompatible units '{from_unit}' and '{to_unit}'")
+    base_value = number * from_cat[from_unit]
+    result = base_value / to_cat[to_unit]
+    return result
