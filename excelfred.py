@@ -1972,3 +1972,661 @@ def CONVERT(number: float, from_unit: str, to_unit: str) -> float:
     base_value = number * from_cat[from_unit]
     result = base_value / to_cat[to_unit]
     return result
+
+def CORREL(array1, array2) -> float:
+    """
+    `=CORREL(array1, array2)` Returns the correlation coefficient between two datasets 
+    Parameters:
+        array1 (list | pandas.Series | numpy.ndarray): First dataset of numbers
+        array2 (list | pandas.Series | numpy.ndarray): Second dataset of numbers
+
+    *Example inputs*:
+
+        CORREL([43, 21, 25, 42, 57, 59], [99, 65, 79, 75, 87, 81]) # ➜ 0.529809
+        CORREL([1, 2, 3, None, 5], [2, 4, None, 8, 10])            # ➜ 1.0
+    """
+    import numpy as np, pandas as pd
+    s1 = pd.Series(array1, dtype='float64')
+    s2 = pd.Series(array2, dtype='float64')
+    valid_mask = ~(s1.isna() | s2.isna())
+    s1 = s1[valid_mask]
+    s2 = s2[valid_mask]
+    if len(s1) < 2: raise ValueError(" #DIV/0! 🚫 less than 2 valid pairs.",np.nan)
+    return s1.corr(s2)
+
+def COS(*args: int | float | str) -> float:
+    """
+    **=COS(number)** Returns the cosine of an angle given in radians.
+    
+    `Parameters: Only one -> Number (accepts int | float | str)`
+    
+    *Example inputs*:
+
+     import excelfred as xl
+     xl.COS(0)                  # -> 1.0
+     xl.COS("3.1415926536")     # -> -1.0
+     xl.COS(3.1415926536/2)     # -> 0.0
+     xl.COS("2+1")              # -> -0.9899924966
+    """
+    import numpy as np
+    try:
+        assert args, "Value Error: 🚫 COS() requires one numeric input."
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 COS() only takes one input.")
+        for arg in args:
+            if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
+                try: arg = eval(arg)
+                except: raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 COS expects a numeric value or a math-like string. Got `{arg}`")
+            return np.cos(number)
+    except AssertionError as ae: raise ValueError(str(ae))
+
+def COSH(*args: int | float | str) -> float:
+    """
+    **=COSH(number)** Returns the hyperbolic cosine of a number.
+    
+    `Parameters: Only one -> Number (accepts int | float | str)`
+    
+    *Example inputs*:
+    
+     import excelfred as xl
+     xl.COSH(0)         # -> 1.0
+     xl.COSH("2")       # -> 3.7621956911
+     xl.COSH(-2)        # -> 3.7621956911
+     xl.COSH("3+2")     # -> 74.2099485248
+    """
+    import numpy as np
+    try:
+        assert args, "Value Error: 🚫 COSH() requires one numeric input."
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 COSH() only takes one input.")
+        for arg in args:
+            if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
+                try: arg = eval(arg)
+                except: raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 COSH expects a numeric value or a math-like string. Got `{arg}`")
+            return np.cosh(number)
+    except AssertionError as ae: raise ValueError(str(ae))
+
+def COT(*args: int | float | str) -> float:
+    """
+    **=COT(number)** Returns the cotangent of an angle given in radians (cos(x) / sin(x)).
+    
+    Parameters: Only one -> Number (accepts int | float | str)
+    
+    *Example inputs*:
+    
+     COT(1)                 # -> 0.6420926159
+     COT("3.1415926536/4")  # -> 1.0
+     COT(3.1415926536/2)    # -> 0.0  (near zero; beware division by zero at multiples of pi)
+     COT("2+1")             # -> -7.0152525514
+    """
+    import numpy as np
+    try:
+        assert args, "Value Error: 🚫 COT() requires one numeric input."
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 COT() only takes one input.")
+        for arg in args:
+            if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
+                try: arg = eval(arg)
+                except: raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 COT expects a numeric value or a math-like string. Got `{arg}`")
+            if np.sin(number) == 0: raise ZeroDivisionError("Math Error: 🚫 COT undefined for multiples of π.")
+            return np.cos(number) / np.sin(number)
+    except AssertionError as ae: raise ValueError(str(ae))
+
+def COTH(*args: int | float | str) -> float:
+    """
+    **=COTH(number)** Returns the hyperbolic cotangent of a number (cosh(x) / sinh(x)).
+    Undefined for 0.
+    
+    Parameters: Only one -> Number (accepts int | float | str)
+    
+    *Example inputs*:
+    
+     COTH(1)        # -> 1.3130352855
+     COTH(-1)       # -> -1.3130352855
+     COTH("2")      # -> 1.0373147207
+     COTH("3+2")    # -> 1.00009080398
+    """
+    import numpy as np
+    try:
+        assert args, "Value Error: 🚫 COTH() requires one numeric input."
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 COTH() only takes one input.")
+        for arg in args:
+            if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
+                try: arg = eval(arg)
+                except: raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 COTH expects a numeric value or a math-like string. Got `{arg}`")
+            if number == 0: raise ZeroDivisionError("Math Error: 🚫 COTH undefined for 0.")
+            return np.cosh(number) / np.sinh(number)
+    except AssertionError as ae: raise ValueError(str(ae))
+
+def COUNT(*args) -> int:
+    """
+    `=COUNT(val_1, [val_2] ...)` Counts the number of cells in a range that contains numbers.
+
+    *Example Inputs*:
+    
+     print(COUNT(1, 2, 3))                         # 3
+     print(COUNT([1, 2, "apple", True, None]))     # 2
+     print(COUNT("2+3", "abc", 4.5))               # 2
+     print(COUNT("", None, "banana"))              # 0
+     print(COUNT([np.nan, " ", "10"]))             # 1   
+     print(COUNT(pd.Series([1, 2, "3"])))          # 3 
+    
+    *`Parameters: Multiple -> Any type`*
+    """
+    import pandas as pd, numpy as np
+    flat_items = []
+    for arg in args:
+        if isinstance(arg, pd.DataFrame): flat_items.extend(arg.to_numpy().flatten())
+        elif isinstance(arg, (pd.Series, pd.Index, np.ndarray, list, tuple)): flat_items.extend(np.array(arg, dtype=object).flatten())
+        else: flat_items.append(arg)
+    count = 0
+    for item in flat_items:
+        if isinstance(item, bool): count += 1
+        elif isinstance(item, (int, float)): count += 1
+        elif isinstance(item, str):
+            s = item.strip()
+            if not s: continue
+            try: float(eval(s)); count += 1
+            except: pass
+    return count
+
+def COUNTA(*args) -> int:
+    """
+    `=COUNTA(val_1, [val_2] ...)` Counts the number of cells that are not empty.
+    
+    *Example Inputs*:
+    
+     print(COUNTA(1, 2, "excelfred", None, ""))    # 3
+     print(COUNTA([True, False, "", "text"]))      # 3
+     print(COUNTA("2+3", "abc", 4.5))              # 3
+     print(COUNTA(None, ""))                       # 0
+     print(COUNTA([np.nan, ""]))                   # 1   (NaN counts since excel accpet its #N/A)
+     print(COUNTA(pd.Series([None, "Hi", 7])))     # 2
+    
+    *`Parameters: Multiple -> Any type`*
+    """
+    import pandas as pd, numpy as np
+    flat_items = []
+    for arg in args:
+        if isinstance(arg, pd.DataFrame): flat_items.extend(arg.to_numpy().flatten())
+        elif isinstance(arg, (pd.Series, pd.Index, np.ndarray, list, tuple)): flat_items.extend(np.array(arg, dtype=object).flatten())
+        else: flat_items.append(arg)
+
+    count = 0
+    for item in flat_items:
+        if item is None: continue
+        if isinstance(item, str) and item.strip() == "": continue
+        count += 1
+    return count
+
+def COUNTBLANK(*args) -> int:
+    """
+    `=COUNTBLANK(val_1, [val_2] ...)` Counts the number of empty cells that in a specified range.
+        
+    *Example Inputs*:
+    
+     print(COUNTBLANK(1, "", None))                      # 2
+     print(COUNTBLANK([None, "apple", ""]))              # 2
+     print(COUNTBLANK("", "", ""))                       # 3
+     print(COUNTBLANK([1, 2, 3]))                        # 0
+     print(COUNTBLANK(np.nan, None, ""))                 # 3
+     print(COUNTBLANK(pd.Series([np.nan, "x", None])))   # 2
+
+    *`Parameters: Multiple -> Any type`*
+    """
+    import pandas as pd, numpy as np
+    flat_items = []
+    for arg in args:
+        if isinstance(arg, pd.DataFrame): flat_items.extend(arg.to_numpy().flatten())
+        elif isinstance(arg, (pd.Series, pd.Index, np.ndarray, list, tuple)): flat_items.extend(np.array(arg, dtype=object).flatten())
+        else: flat_items.append(arg)
+    count = 0
+    for item in flat_items:
+        if item is None: count += 1
+        elif isinstance(item, str) and item.strip() == "": count += 1
+        elif isinstance(item, float) and np.isnan(item): count += 1
+    return count
+
+def COUNTIF(range_vals, criteria) -> int:
+    """
+    `=COUNTIF(range, criteria)` Counts the number of cells in a range that meet the given **condition**.
+    
+    Parameters:
+        range_vals (list | tuple | pandas.Series | numpy.ndarray): The range of cells to evaluate.
+        criteria (int | float | str | bool): The condition to test against each cell.
+    
+    *Example Inputs*:
+    
+     print(COUNTIF([1, 2, 3, 4, 5], ">3"))                  # 2
+     print(COUNTIF(["Apple", "Banana", "Apple"], "Apple"))  # 2
+     print(COUNTIF([True, False, True], True))              # 2
+     print(COUNTIF([10, 20, 30], "<=20"))                   # 2
+     print(COUNTIF([None, "", 5], 5))                       # 1
+     print(COUNTIF(pd.Series([1, 2, 3, 4]), "<4"))          # 3
+    """
+    import pandas as pd, numpy as np
+    if isinstance(range_vals, pd.DataFrame): arr = range_vals.to_numpy().flatten()
+    elif isinstance(range_vals, (pd.Series, pd.Index, np.ndarray, list, tuple)): arr = np.array(range_vals, dtype=object).flatten()
+    else: arr = [range_vals]
+    if isinstance(criteria, str) and criteria.strip() and criteria[0] in "<>=":
+        try: func = lambda v: eval(f"v{criteria}")
+        except: raise ValueError(f"#VALUE!: 🚫 Invalid criteria: {criteria}")
+    else: func = lambda v: v == criteria
+    count = 0
+    for v in arr:
+        if func(v): count += 1
+    return count
+
+def COUNTIFS(*criteria_pairs) -> int:
+    """
+    `=COUNTIFS(criteria_range1, criteria1, [criteria_range2, criteria2] ...)` Counts the number of cells that meet multiple criteria across one or more ranges.
+    
+    Parameters:
+        criteria_rangeN (list | tuple | pandas.Series | numpy.ndarray): Range of cells for criteria N.
+        criteriaN (int | float | str | bool): Condition to apply to criteria_rangeN.
+    
+    *Example Inputs*:
+    
+     print(COUNTIFS([1, 2, 3, 4], ">1"))                                         # 3
+     print(COUNTIFS([1, 2, 3, 4], ">1", [10, 20, 30, 40], "<30"))                # 2
+     print(COUNTIFS(["A", "B", "A"], "A", [True, False, True], True))            # 2
+     print(COUNTIFS([5, 6, 7], ">5", [1, 2, 3], "<3"))                           # 1
+     print(COUNTIFS(pd.Series([1, 2, 3]), "<3", pd.Series([10, 20, 30]), ">10")) # 1
+     print(COUNTIFS([None, 1, 2], ">0", [True, False, True], True))              # 1
+    """
+    import pandas as pd, numpy as np
+    if len(criteria_pairs) % 2 != 0: raise ValueError("#VALUE!: 🚫 COUNTIFS requires pairs of (range, criteria).")
+    mask = None
+    for i in range(0, len(criteria_pairs), 2):
+        range_vals = criteria_pairs[i]
+        if isinstance(range_vals, pd.DataFrame): arr = range_vals.to_numpy().flatten()
+        elif isinstance(range_vals, (pd.Series, pd.Index, np.ndarray, list, tuple)): arr = np.array(range_vals, dtype=object).flatten()
+        else: arr = [range_vals]
+        criteria = criteria_pairs[i + 1]
+        if isinstance(criteria, str) and criteria.strip() and criteria[0] in "<>=": func = lambda v: eval(f"v{criteria}")
+        else: func = lambda v: v == criteria
+        current_mask = np.array([False if v is None else func(v) for v in arr])
+        if mask is None: mask = current_mask
+        else: mask = mask & current_mask
+    return int(mask.sum()) if mask is not None else 0
+
+def COUPDAYSBF(settlement: str, maturity: str, frequency: int, basis: int = 0) -> int:
+    """
+    `=COUPDAYSBF(settlement, maturity, frequency, [basis])` Returns the **number of days from the beginning of the coupon period to the settlement date**.
+
+    Parameters:
+        settlement (str | pandas.Timestamp): Settlement date ('DD-MM-YYYY')
+        maturity   (str | pandas.Timestamp): Maturity date ('DD-MM-YYYY')
+        frequency  (int): 1 = annual, 2 = semi-annual, 4 = quarterly
+        basis      (int, optional): Day-count basis
+            0 = US (NASD) 30/360
+            1 = Actual/Actual
+            2 = Actual/360
+            3 = Actual/365
+            4 = European 30/360
+
+    *Example Inputs*:
+
+     print(COUPDAYSBF("15-01-2011", "15-11-2011", 1))         # 61
+     print(COUPDAYSBF("15-01-2011", "15-11-2011", 2, 1))      # 61
+     print(COUPDAYSBF("15-01-2011", "15-11-2011", 4, 0))      # 60  (30/360 US count)
+     print(COUPDAYSBF("01-09-2022", "15-11-2025", 2))         # 47
+     print(COUPDAYSBF("01-09-2022", "15-11-2025", 2, 4))      # 45  (30/360 EU count)
+    """
+    import pandas as pd
+    try:
+        sd = pd.to_datetime(settlement, dayfirst=True) if not isinstance(settlement, pd.Timestamp) else settlement
+        md = pd.to_datetime(maturity,   dayfirst=True) if not isinstance(maturity,   pd.Timestamp) else maturity
+    except Exception: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY' or pandas.Timestamp.")
+    if sd >= md: raise ValueError("🚫 Settlement must be before maturity.")
+    if frequency not in (1, 2, 4): raise ValueError("🚫 Frequency must be 1, 2, or 4.")
+    if basis not in (0, 1, 2, 3, 4): raise ValueError("🚫 Basis must be an integer in {0,1,2,3,4}.")
+    months = 12 // frequency; coupon = md
+    while coupon > sd: coupon -= pd.DateOffset(months=months)
+    start = coupon
+    if basis in (1, 2, 3): days = (sd - start).days
+    elif basis in (0, 4):   
+        def _eom(d: pd.Timestamp) -> bool: return d.day == (d + pd.offsets.MonthEnd(0)).day
+        y1, m1, d1 = start.year, start.month, start.day
+        y2, m2, d2 = sd.year, sd.month, sd.day
+        if basis == 0:
+            if (m1 == 2 and _eom(start)): d1 = 30
+            if (m2 == 2 and _eom(sd) and (m1 == 2 and _eom(start))): d2 = 30
+            if d1 == 31: d1 = 30
+            if d2 == 31 and d1 in (30, 31): d2 = 30
+        else:
+            if d1 == 31: d1 = 30
+            if d2 == 31: d2 = 30
+        days = (y2 - y1) * 360 + (m2 - m1) * 30 + (d2 - d1)
+    else: days = (sd - start).days
+    return int(days)
+
+def COUPDAYS(settlement: str, maturity: str, frequency: int, basis: int = 0) -> int:
+    """
+    `=COUPDAYS(settlement, maturity, frequency, [basis])` Returns the **number of days in the coupon period** that contains the settlement date.
+
+    Parameters:
+        settlement (str | pandas.Timestamp): Settlement date ('DD-MM-YYYY')
+        maturity   (str | pandas.Timestamp): Maturity date ('DD-MM-YYYY')
+        frequency  (int): 1 = annual, 2 = semiannual, 4 = quarterly
+        basis      (int, optional): Day-count basis
+            0 = US (NASD) 30/360      → returns 360/frequency
+            1 = Actual/Actual         → returns actual days in period
+            2 = Actual/360            → returns 360/frequency
+            3 = Actual/365            → returns 365/frequency
+            4 = European 30/360       → returns 360/frequency
+
+    *Example Inputs*:
+
+     print(COUPDAYS("25-01-2011", "15-11-2011", 1))           # 304 (actual)
+     print(COUPDAYS("25-01-2011", "15-11-2011", 2, 1))        # 181 (actual)
+     print(COUPDAYS("25-01-2011", "15-11-2011", 2, 0))        # 180 (30/360)
+     print(COUPDAYS("01-09-2022", "15-11-2025", 2))           # 76  (actual, Sep 1 → Nov 15)
+     print(COUPDAYS("01-09-2022", "15-11-2025", 4, 3))        # 91  (365/4)
+    """
+    import pandas as pd
+    try:
+        sd = pd.to_datetime(settlement, dayfirst=True) if not isinstance(settlement, pd.Timestamp) else settlement
+        md = pd.to_datetime(maturity,   dayfirst=True) if not isinstance(maturity,   pd.Timestamp) else maturity
+    except Exception: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY' or pandas.Timestamp.")
+    if sd >= md: raise ValueError("🚫 Settlement must be before maturity.")
+    if frequency not in (1, 2, 4): raise ValueError("🚫 Frequency must be 1, 2, or 4.")
+    if basis not in (0, 1, 2, 3, 4): raise ValueError("🚫 Basis must be an integer in {0,1,2,3,4}.")
+    months = 12 // frequency; coupon = md
+    while coupon > sd: coupon -= pd.DateOffset(months=months)
+    start = coupon; end = coupon + pd.DateOffset(months=months)
+    if basis == 1: days = (end - start).days
+    elif basis in (0, 4, 2, 3):
+        if basis in (0, 4, 2): days = int(360 // frequency)
+        elif basis == 3: days = int(round(365 / frequency))
+    else: days = (end - start).days
+    return int(days)
+
+def COUPDAYSNC(settlement: str, maturity: str, frequency: int, basis: int = 0) -> int:
+    """
+    `=COUPDAYSNC(settlement, maturity, frequency, [basis])` Returns the **number of days from the settlement date to the next coupon date**.
+
+    Parameters:
+        settlement (str | pandas.Timestamp): Settlement date ('DD-MM-YYYY')
+        maturity   (str | pandas.Timestamp): Maturity date ('DD-MM-YYYY')
+        frequency  (int): 1 = annual, 2 = semiannual, 4 = quarterly
+        basis      (int, optional): Day-count basis
+            0 = US (NASD) 30/360
+            1 = Actual/Actual
+            2 = Actual/360
+            3 = Actual/365
+            4 = European 30/360
+
+    *Example Inputs*:
+
+     print(COUPDAYSNC("15-01-2011", "15-11-2011", 1))         # 303
+     print(COUPDAYSNC("15-01-2011", "15-11-2011", 2, 1))      # 120
+     print(COUPDAYSNC("15-01-2011", "15-11-2011", 4, 0))      # 90   
+     print(COUPDAYSNC("01-09-2022", "15-11-2025", 2))         # 75
+     print(COUPDAYSNC("01-09-2022", "15-11-2025", 2, 4))      # 75   
+    """
+    import pandas as pd
+    try:
+        sd = pd.to_datetime(settlement, dayfirst=True) if not isinstance(settlement, pd.Timestamp) else settlement
+        md = pd.to_datetime(maturity,   dayfirst=True) if not isinstance(maturity,   pd.Timestamp) else maturity
+    except Exception: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY' or pandas.Timestamp.")
+    if sd >= md: raise ValueError("🚫 Settlement must be before maturity.")
+    if frequency not in (1, 2, 4): raise ValueError("🚫 Frequency must be 1, 2, or 4.")
+    if basis not in (0, 1, 2, 3, 4): raise ValueError("🚫 Basis must be an integer in {0,1,2,3,4}.")
+    months = 12 // frequency; coupon = md
+    while coupon > sd: coupon -= pd.DateOffset(months=months)
+    next_coupon = coupon + pd.DateOffset(months=months)
+    if basis in (1, 2, 3): days = (next_coupon - sd).days
+    elif basis in (0, 4):
+        def _eom(d: pd.Timestamp) -> bool: return d.day == (d + pd.offsets.MonthEnd(0)).day
+        y1, m1, d1 = sd.year, sd.month, sd.day
+        y2, m2, d2 = next_coupon.year, next_coupon.month, next_coupon.day
+        if basis == 0:
+            if (m1 == 2 and _eom(sd)): d1 = 30
+            if (m2 == 2 and _eom(next_coupon) and (m1 == 2 and _eom(sd))): d2 = 30
+            if d1 == 31: d1 = 30
+            if d2 == 31 and d1 in (30, 31): d2 = 30
+        else:
+            if d1 == 31: d1 = 30
+            if d2 == 31: d2 = 30
+        days = (y2 - y1) * 360 + (m2 - m1) * 30 + (d2 - d1)
+    else: days = (next_coupon - sd).days
+    return int(days)
+
+def COUPNCD(settlement: str, maturity: str, frequency: int, basis: int = 0) -> str:
+    """
+    `=COUPNCD(settlement, maturity, frequency, [basis])` Returns the **next coupon date after the settlement date** in `'DD-MM-YYYY'` format.
+
+    Parameters:
+        settlement (str | pandas.Timestamp): Settlement date ('DD-MM-YYYY')
+        maturity   (str | pandas.Timestamp): Maturity date ('DD-MM-YYYY')
+        frequency  (int): 1 = annual, 2 = semiannual, 4 = quarterly
+        basis      (int, optional): Day-count basis (not used for the date itself; included for Excel signature parity)
+
+    *Example Inputs*:
+
+     print(COUPNCD("15-01-2011", "15-11-2011", 1))            # '15-11-2011'
+     print(COUPNCD("15-01-2011", "15-11-2011", 2, 1))         # '15-05-2011'
+     print(COUPNCD("15-01-2011", "15-11-2011", 4, 0))         # '15-02-2011'
+     print(COUPNCD("01-09-2022", "15-11-2025", 2))            # '15-11-2022'
+     print(COUPNCD("14-11-2025", "15-11-2025", 2))            # '15-11-2025'
+    """
+    import pandas as pd
+    try:
+        sd = pd.to_datetime(settlement, dayfirst=True) if not isinstance(settlement, pd.Timestamp) else settlement
+        md = pd.to_datetime(maturity,   dayfirst=True) if not isinstance(maturity,   pd.Timestamp) else maturity
+    except Exception: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY' or pandas.Timestamp.")
+    if sd >= md: raise ValueError("🚫 Settlement must be before maturity.")
+    if frequency not in (1, 2, 4): raise ValueError("🚫 Frequency must be 1, 2, or 4.")
+    if basis not in (0, 1, 2, 3, 4): raise ValueError("🚫 Basis must be an integer in {0,1,2,3,4}.")
+    months = 12 // frequency; coupon = md
+    while coupon > sd: coupon -= pd.DateOffset(months=months)
+    next_coupon = coupon + pd.DateOffset(months=months)
+    return next_coupon.strftime("%d-%m-%Y")
+
+def COUPNUM(settlement: str, maturity: str, frequency: int, basis: int = 0) -> int:
+    """
+    `=COUPNUM(settlement, maturity, frequency, [basis])` Returns the **number of coupons payable between the settlement and maturity**.
+
+    Parameters:
+        settlement (str | pandas.Timestamp): Settlement date ('DD-MM-YYYY')
+        maturity   (str | pandas.Timestamp): Maturity date ('DD-MM-YYYY')
+        frequency  (int): 1 = annual, 2 = semiannual, 4 = quarterly
+        basis      (int, optional): Day-count basis (not used in the count; included for Excel signature parity)
+
+    *Example Inputs*:
+
+     print(COUPNUM("15-01-2011", "15-11-2011", 1))            # 1
+     print(COUPNUM("15-01-2011", "15-11-2011", 2, 1))         # 2
+     print(COUPNUM("15-01-2011", "15-11-2011", 4, 0))         # 4
+     print(COUPNUM("01-09-2022", "15-11-2025", 2))            # 7
+     print(COUPNUM("15-11-2024", "15-11-2025", 2))            # 2
+    """
+    import pandas as pd
+    try:
+        sd = pd.to_datetime(settlement, dayfirst=True) if not isinstance(settlement, pd.Timestamp) else settlement
+        md = pd.to_datetime(maturity,   dayfirst=True) if not isinstance(maturity,   pd.Timestamp) else maturity
+    except Exception: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY' or pandas.Timestamp.")
+    if sd >= md: raise ValueError("🚫 Settlement must be before maturity.")
+    if frequency not in (1, 2, 4): raise ValueError("🚫 Frequency must be 1, 2, or 4.")
+    if basis not in (0, 1, 2, 3, 4): raise ValueError("🚫 Basis must be an integer in {0,1,2,3,4}.")
+    months = 12 // frequency; coupon = md; count = 0
+    while coupon > sd:
+        coupon -= pd.DateOffset(months=months)
+        count += 1
+    return int(count)
+
+def COUPPCD(settlement: str, maturity: str, frequency: int, basis: int = 0) -> str:
+    """
+    `=COUPPCD(settlement, maturity, frequency, [basis])` Returns the **previous coupon date before the settlement date** in `'DD-MM-YYYY'` format.
+
+    Parameters:
+        settlement (str | pandas.Timestamp): Settlement date ('DD-MM-YYYY')
+        maturity   (str | pandas.Timestamp): Maturity date ('DD-MM-YYYY')
+        frequency  (int): 1 = annual, 2 = semiannual, 4 = quarterly
+        basis      (int, optional): Day-count basis (not used for the date itself; included for Excel signature parity)
+
+    *Example Inputs*:
+
+     print(COUPPCD("15-01-2011", "15-11-2011", 1))            # '15-11-2010'
+     print(COUPPCD("15-01-2011", "15-11-2011", 2, 1))         # '15-11-2010'
+     print(COUPPCD("15-01-2011", "15-11-2011", 4, 4))         # '15-12-2010'
+     print(COUPPCD("01-09-2022", "15-11-2025", 2))            # '15-05-2022'
+     print(COUPPCD("14-11-2025", "15-11-2025", 2))            # '15-05-2025'
+    """
+    import pandas as pd
+    try:
+        sd = pd.to_datetime(settlement, dayfirst=True) if not isinstance(settlement, pd.Timestamp) else settlement
+        md = pd.to_datetime(maturity,   dayfirst=True) if not isinstance(maturity,   pd.Timestamp) else maturity
+    except Exception: raise ValueError("🚫 Invalid date format. Use 'DD-MM-YYYY' or pandas.Timestamp.")
+    if sd >= md: raise ValueError("🚫 Settlement must be before maturity.")
+    if frequency not in (1, 2, 4): raise ValueError("🚫 Frequency must be 1, 2, or 4.")
+    if basis not in (0, 1, 2, 3, 4): raise ValueError("🚫 Basis must be an integer in {0,1,2,3,4}.")
+    months = 12 // frequency; coupon = md
+    while coupon > sd: coupon -= pd.DateOffset(months=months)
+    return coupon.strftime("%d-%m-%Y")
+
+def COVARIANCE_P(array1, array2) -> float:
+    """
+    `=COVARIANCE.P(array1, array2)` Returns the **population covariance** of two datasets.
+
+    Parameters:
+        array1 (list | pandas.Series | numpy.ndarray): First dataset (numbers, numeric strings; text/None ignored)
+        array2 (list | pandas.Series | numpy.ndarray): Second dataset (numbers, numeric strings; text/None ignored)
+
+    Notes:
+        • Pairs are formed by position; pairs with a non-numeric in either array are ignored.  
+        • Requires at least 1 valid numeric pair; otherwise → `#DIV/0!`.  
+        • If array lengths differ, extra elements are ignored (Excel requires same-size ranges, but this function
+          follows the CORREL-style behavior you provided: only aligned/valid pairs are used).
+
+    *Example inputs*:
+
+        from excelfred import COVARIANCE_S; import pandas as pd, numpy as np
+        print(COVARIANCE_P([2, 4, 6], [1, 3, 5]))                            # ➜ 2.6666666667
+        print(COVARIANCE_P([1, 2, 3, None, 5], [2, 4, None, 8, 10]))         # ➜ 5.7777777778
+        print(COVARIANCE_P(["1", "x", "3"], [2, 5, "7"]))                    # ➜ 3.0
+        print(COVARIANCE_P(pd.Series([1, np.nan, 3]), pd.Series([4, 5, 6]))) # ➜ 0.5
+    """
+    import numpy as np, pandas as pd
+    try:
+        s1 = pd.Series(array1, dtype="object")
+        s2 = pd.Series(array2, dtype="object")
+    except Exception: raise TypeError("Type Error: 🚫 array1/array2 must be array-like (list/Series/ndarray).")
+    s1 = s1.map(lambda v: np.nan if isinstance(v, (bool, np.bool_)) else v)
+    s2 = s2.map(lambda v: np.nan if isinstance(v, (bool, np.bool_)) else v)
+    s1 = pd.to_numeric(s1, errors="coerce")
+    s2 = pd.to_numeric(s2, errors="coerce")
+    valid = ~(s1.isna() | s2.isna())
+    x = s1[valid].to_numpy(dtype=float); y = s2[valid].to_numpy(dtype=float)
+    n = x.size
+    if n < 1: raise ValueError("#DIV/0! 🚫 No valid numeric pairs to compute COVARIANCE.P.")
+    mx = float(np.mean(x)); my = float(np.mean(y))
+    cov = float(np.sum((x - mx) * (y - my)) / n)
+    return cov
+
+def COVARIANCE_S(array1, array2) -> float:
+    """
+    `=COVARIANCE.S(array1, array2)` Returns the **sample covariance** of two datasets.
+
+    Parameters:
+        array1 (list | pandas.Series | numpy.ndarray): First dataset (numbers, numeric strings; text/None ignored)
+        array2 (list | pandas.Series | numpy.ndarray): Second dataset (numbers, numeric strings; text/None ignored)
+
+    Notes:
+        • Pairs are formed by position; pairs with a non-numeric in either array are ignored.  
+        • Uses the sample formula (divides by N−1); requires at least 2 valid numeric pairs; otherwise → `#DIV/0!`.  
+        • If array lengths differ, extra elements are ignored (same alignment behavior as above).
+
+    *Example inputs*:
+
+        from excelfred import COVARIANCE_S; import pandas as pd, numpy as np
+        print(COVARIANCE_S([2, 4, 6], [1, 3, 5]))                                   # ➜ 4.0
+        print(COVARIANCE_S([1, 2, 3, None, 5], [2, 4, None, 8, 10]))                # ➜ 8.6666666667
+        print(COVARIANCE_S(["1", "x", "3"], [2, 5, "7"]))                           # ➜ 4.5
+        print(COVARIANCE_S(np.array([1, 2, np.nan, 4]), pd.Series([2, 1, 3, 0])))   # ➜ -1.0
+    """
+    import numpy as np, pandas as pd
+    try:
+        s1 = pd.Series(array1, dtype="object")
+        s2 = pd.Series(array2, dtype="object")
+    except Exception: raise TypeError("Type Error: 🚫 array1/array2 must be array-like (list/Series/ndarray).")
+    s1 = s1.map(lambda v: np.nan if isinstance(v, (bool, np.bool_)) else v)
+    s2 = s2.map(lambda v: np.nan if isinstance(v, (bool, np.bool_)) else v)
+    s1 = pd.to_numeric(s1, errors="coerce")
+    s2 = pd.to_numeric(s2, errors="coerce")
+    valid = ~(s1.isna() | s2.isna())
+    x = s1[valid].to_numpy(dtype=float); y = s2[valid].to_numpy(dtype=float)
+    n = x.size
+    if n < 2: raise ValueError("#DIV/0! 🚫 Need at least 2 valid numeric pairs for COVARIANCE.S.")
+    mx = float(np.mean(x)); my = float(np.mean(y))
+    cov = float(np.sum((x - mx) * (y - my)) / (n - 1))
+    return cov
+
+def CSC(*args: int | float | str) -> float:
+    """
+    **=CSC(number)** Returns the cosecant of an angle given in radians.
+
+    Formula: `CSC(x) = 1 / SIN(x)`
+
+    `Parameters: Only one -> Number (accepts int | float | str)`
+
+    *Example inputs*:
+
+     import excelfred as xl
+     xl.CSC(1)                  # -> 1.1883951058
+     xl.CSC("3.1415926536/2")   # -> 1.0
+     xl.CSC("2+1")              # -> 7.0861673957
+     xl.CSC(0.5235987756)       # -> 2.0
+    """
+    import numpy as np
+    try:
+        assert args, "Value Error: 🚫 CSC() requires one numeric input."
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 CSC() only takes one input.")
+        for arg in args:
+            if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
+                try: arg = eval(arg)
+                except: raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 CSC expects a numeric value or a math-like string. Got `{arg}`")
+            sin_val = np.sin(number)
+            if sin_val == 0: raise ZeroDivisionError("Math Error: 🚫 CSC undefined for angles where SIN(x) = 0.")
+            return 1 / sin_val
+    except AssertionError as ae: raise ValueError(str(ae))
+
+def CSCH(*args: int | float | str) -> float:
+    """
+    **=CSCH(number)** Returns the hyperbolic cosecant of a number.
+
+    Formula: `CSCH(x) = 1 / SINH(x)`
+
+    `Parameters: Only one -> Number (accepts int | float | str)`
+
+    *Example inputs*:
+
+     import excelfred as xl
+     xl.CSCH(1)        # -> 0.8509181282
+     xl.CSCH("-2")     # -> -0.2757205648
+     xl.CSCH("3+2")    # -> 0.0134752822
+     xl.CSCH(0.5)      # -> 1.9190347513
+    """
+    import numpy as np
+    try:
+        assert args, "Value Error: 🚫 CSCH() requires one numeric input."
+        if len(args) != 1: raise ValueError("Parameters Error: 🚫 CSCH() only takes one input.")
+        for arg in args:
+            if isinstance(arg, str) and not arg.replace('.', '', 1).replace('-', '', 1).isdigit():
+                try: arg = eval(arg)
+                except: raise ValueError(f"Value Error: 🚫 Cannot evaluate the expression `{arg}`.")
+            try: number = float(arg)
+            except: raise TypeError(f"Type Error: 🚫 CSCH expects a numeric value or a math-like string. Got `{arg}`")
+            sinh_val = np.sinh(number)
+            if sinh_val == 0: raise ZeroDivisionError("Math Error: 🚫 CSCH undefined for x = 0.")
+            return 1 / sinh_val
+    except AssertionError as ae: raise ValueError(str(ae))
+
