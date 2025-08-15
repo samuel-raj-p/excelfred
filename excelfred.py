@@ -2630,3 +2630,573 @@ def CSCH(*args: int | float | str) -> float:
             return 1 / sinh_val
     except AssertionError as ae: raise ValueError(str(ae))
 
+class Cube:
+    """
+    `A`**`OLAP`**`engine (or cube) for in-memory analytics.`
+     
+    **Library module**:
+
+      from excelfred import CUBEKPIMEMBER, CUBEMEMBER, CUBEMEMBERPROPERTY, 
+      CUBESET, CUBESETCOUNT, CUBERANKEDMEMBER
+
+    Attributes:
+        name (str): Name of the cube.
+        dimensions (dict): Dimensions of the cube.
+        measures_meta (dict): Measures and their metadata.
+        kpis (dict): Key Performance Indicators.
+        data (DataFrame): Underlying fact table.
+
+    **Example Inputs**:
+
+        # Create Table
+        import pandas; from excelfred import cube # import numpy or scipy if required !
+        df = pd.DataFrame({ "Product": ["Bike","Bike","Helmet","Helmet","Bike","Helmet"],
+                            "Region":  ["US","US","US","EU","EU","EU"],
+                            "Year":    [2023, 2024, 2023, 2023, 2023, 2024],
+                            "Sales":   [1000, 1100, 300,   200,  700,  500],
+                            "Qty":     [10,   12,   4,     3,    8,    5],
+                            "InventoryEnd":[50,55,20,18,40,35] })
+
+        # Create Database
+        cube = Cube("SalesCube") 
+        cube.add_data(df) 
+
+        # Insert Dimensions
+        cube.add_dimension("Product",
+          { "Bike": {"caption":"Bike","unique_name":"[Product].[Bike]","unary":1},
+            "Helmet": {"caption":"Helmet","unique_name":"[Product].[Helmet]","unary":1} })
+        cube.add_dimension("Region", 
+          { "US": {"caption":"United States","unique_name":"[Region].[US]","unary":1},
+            "EU": {"caption":"Europe","unique_name":"[Region].[EU]","unary":1} })
+        cube.add_dimension("Year",
+          {  2023: {"caption":"2023","unique_name":"[Date].[Year].[2023]","unary":1},
+             2024: {"caption":"2024","unique_name":"[Date].[Year].[2024]","unary":1} })
+        cube.add_dimension("Date",
+          { "2023": {},
+            "2024": {} })
+
+        # Measures
+        cube.add_measure("Sales", "Sales", agg="sum")
+        cube.add_measure("Qty", "Qty", agg="sum")
+        cube.add_measure("InventoryEnd", "InventoryEnd", agg="last_non_empty", time_dim="Year")
+
+        # KPI
+        cube.add_kpi("Revenue KPI", {
+                    "value": "Sales",
+                    "goal":  5000,
+                    "status": lambda c, ctx: c.evaluate_measure_vectorized("Sales", ctx) / 5000 })
+
+    `Now use CUBE series to display output by attached snippet in description of each functions`
+    """
+    def __init__(self, name): self.name = name; self.dimensions = {}; self.measures_meta = {}; self.kpis = {}; self.data = None
+    def add_data(self, df): self.data = df
+    def add_dimension(self, name, members): self.dimensions[name] = members
+    def add_measure(self, name, column, agg="sum", time_dim=None): self.measures_meta[name] = { "column": column, "agg": agg, "time_dim": time_dim }
+    def add_kpi(self, name, parts): self.kpis[name] = parts
+    def evaluate_measure_vectorized(self, measure, ctx):
+        meta = self.measures_meta[measure]
+        df = self.data
+        mask = None
+        for dim, key in ctx.items():
+            m = (df[dim] == key)
+            mask = m if mask is None else (mask & m)
+        sub = df if mask is None else df[mask]
+        if sub.empty: return 0.0
+        return float(sub[meta["column"]].sum())
+
+def CUBEKPIMEMBER(cube: object, kpi_name: str, kpi_property: int | str, caption: str | None = None) -> dict:
+    """
+    `=CUBEKPIMEMBER(connection, kpi_name, kpi_property, [caption])` Returns a **Key Performance Indicator (KPI)** property from the cube and display the KPI name in the cell.
+
+    Parameters:
+        cube (object): The cube connection object. Must not be None.
+        kpi_name (str): The name of the KPI in the cube.
+        kpi_property (int | str): The property of the KPI to return.
+            Accepts 1 = value, 2 = goal, 3 = status, 4 = trend, 5 = weight,
+            or the property name as a string.
+        [caption] (str, optional): A caption for the cell. If omitted, the default caption is used.
+        
+    **SAMPLE CODE**:
+
+     kpi_value_handle = CUBEKPIMEMBER(cube, "Revenue KPI")
+     print(kpi_value_handle) 
+
+     # OUTPUT:
+     # >>> {'type': 'kpi', 'kpi_name': 'Revenue KPI', 'kpi_part': 'value', 'caption': 'Revenue KPI - value'}
+
+     kpi_goal_handle = CUBEKPIMEMBER(cube, "Revenue KPI", "goal", "My KPI Goal")
+     print(kpi_goal_handle)
+     # OUTPUT:
+     # >>> {'type': 'kpi', 'kpi_name': 'Revenue KPI', 'kpi_part': 'goal', 'caption': 'My KPI Goal'}
+    
+    `Refer "Cube" Class in excelfred to understand database.`
+    """
+    if cube is None: raise ValueError("#NAME? 🚫 Invalid or missing connection.")
+    if not hasattr(cube, "kpis") or kpi_name not in cube.kpis: raise ValueError(f"#N/A 🚫 KPI not found: {kpi_name}")
+    prop_map = {1:"value", 2:"goal", 3:"status", 4:"trend", 5:"weight"}
+    if isinstance(kpi_property, int): prop = prop_map.get(kpi_property)
+    elif isinstance(kpi_property, str): prop = kpi_property.strip().lower()
+    else: raise ValueError("#VALUE! 🚫 invalid KPI property type")
+    if prop is None: raise ValueError("#VALUE! 🚫 invalid KPI property")
+    kpi_parts = cube.kpis[kpi_name]
+    part = kpi_parts.get(prop)
+    if prop in ("status", "trend") and callable(part):
+        def wrapper(c, filters):
+            try:  val = part(c, filters)
+            except TypeError:  val = part(filters)
+            goal_val = kpi_parts.get("goal")
+            if isinstance(goal_val, str):  goal_val = c.evaluate_measure_vectorized(goal_val, filters)
+            elif callable(goal_val):
+                try: goal_val = goal_val(c, filters)
+                except TypeError: goal_val = goal_val(filters)
+            if goal_val is None or goal_val == 0: raise ValueError("#DIV/0! 🚫 goal is zero or missing")
+            return float(val) / float(goal_val)
+        part = wrapper
+    return { "type": "kpi", "kpi_name": kpi_name, "kpi_part": prop, "caption": caption or f"{kpi_name} - {prop}" }
+
+def CUBEMEMBER(cube: object, member_expression: str, caption: str | None = None) -> dict:
+    """
+    `=CUBEMEMBER(connection, member_expression, [caption])` Returns a **member** or tuple from a cube.
+
+    Parameters:
+        cube (object): The cube connection object. Must not be None.
+        member_expression (str): The unique name of a member in the cube.
+        [caption] (str, optional): A caption for the cell. If omitted, the member’s default caption is used.
+    
+    **SAMPLE CODE**:
+
+     print(CUBEMEMBER(cube, "[Product].[Bike]")) 
+     # OUTPUT >>> {'type': 'member', 'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'Bike'}
+    
+     print(CUBEMEMBER(cube, "[Product].[Bike]", "My Bike"))
+     # OUTPUT >>> {'type': 'member', 'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'My Bike'}
+
+    `Refer "Cube" Class in excelfred to understand database.`
+    """
+    if cube is None: raise ValueError("#NAME? 🚫 Invalid or missing connection.")
+    if not isinstance(member_expression, str): raise ValueError("#VALUE! 🚫 member_expression must be a string")
+    s = member_expression.strip()
+    try:
+        token = s
+        if token.startswith("[") and token.endswith("]"): token = token[1:-1]
+        parts = token.split("].[")
+        dim = parts[0]; mem = parts[-1]
+    except Exception: raise ValueError(f"#N/A 🚫 Invalid member expression: {member_expression}")
+    if not hasattr(cube, "dimensions") or dim not in cube.dimensions: raise ValueError(f"#N/A 🚫 Dimension not found: {dim}")
+    members = cube.dimensions.get(dim, {})
+    if mem in members:
+        info = members[mem]
+        return {"type": "member", "unique_name": member_expression, "dimension": dim, "key": mem, "caption": caption or info.get("caption", mem)}
+    for key, info in members.items():
+        if str(info.get("caption", "")).lower() == mem.lower(): return {"type": "member", "unique_name": member_expression, "dimension": dim, "key": key, "caption": caption or info.get("caption", key)}
+    for key, info in members.items():
+        if info.get("unique_name") == member_expression: return {"type": "member", "unique_name": member_expression, "dimension": dim, "key": key, "caption": caption or info.get("caption", key)}
+    raise ValueError(f"#N/A 🚫 Member not found: {member_expression}")
+
+def CUBEMEMBERPROPERTY(cube: object, member_expression: str | dict, property_name: str) -> str:
+    """
+    `=CUBEMEMBERPROPERTY(connection, member, property)` Returns the **property value** of a cube member.
+
+    Parameters:
+        cube (object): The cube connection object. Must not be None.
+        member_expression (str | dict): The unique name of a member or a member handle.
+        property_name (str): The name of the property to return.
+            Common values: "MEMBER_CAPTION", "MEMBER_UNIQUE_NAME", "KEY".
+
+    **SAMPLE CODE**:
+
+     print(CUBEMEMBERPROPERTY(cube, "[Product].[Bike]", "caption"))
+     # OUTPUT >>> Bike
+    
+    `Refer "Cube" Class in excelfred to understand database.`
+    """
+    if cube is None: raise ValueError("#NAME? 🚫 Invalid or missing connection.")
+    if not property_name: raise ValueError("#VALUE! 🚫 property_name is required")
+    if isinstance(member_expression, dict) and member_expression.get("type") == "member":
+        handle = member_expression; prop = property_name.strip().lower()
+        if prop in ("member_caption", "caption"): return handle.get("caption")
+        if prop in ("member_unique_name", "unique_name"): return handle.get("unique_name")
+        if prop in ("key",): return handle.get("key")
+        raise ValueError(f"#N/A 🚫 Property not found: {property_name}")
+    if isinstance(member_expression, str):
+        s = member_expression.strip()
+        try:
+            token = s
+            if token.startswith("[") and token.endswith("]"): token = token[1:-1]
+            parts = token.split("].[")
+            dim = parts[0]; mem = parts[-1]
+        except Exception: raise ValueError(f"#N/A 🚫 Invalid member expression: {member_expression}")
+        if not hasattr(cube, "dimensions") or dim not in cube.dimensions: raise ValueError(f"#N/A 🚫 Dimension not found: {dim}")
+        members = cube.dimensions.get(dim, {}); key = None; info = None
+        if mem in members: key = mem; info = members[mem]
+        else:
+            for k, v in members.items(): 
+                if str(v.get("caption", "")).lower() == mem.lower(): key = k; info = v; break
+            if not key:
+                for k, v in members.items():
+                    if v.get("unique_name") == member_expression: key = k; info = v; break
+        if not key: raise ValueError(f"#N/A 🚫 Member not found: {member_expression}")
+        prop = property_name.strip().lower()
+        if prop in ("member_caption", "caption"): return info.get("caption", key)
+        if prop in ("member_unique_name", "unique_name"): return info.get("unique_name", f"[{dim}].[{key}]")
+        if prop in ("key",): return key
+        raise ValueError(f"#N/A 🚫 Property not found: {property_name}")
+    raise ValueError("#VALUE! 🚫 invalid member handle or expression")
+
+def CUBESET(cube: object, set_expression: str | list[str | dict] | tuple, caption: str | None = None, sort_order: int | None = None, sort_by: str | None = None) -> dict:  
+    """
+    `=CUBESET(connection, set_expression, [caption], [sort_order], [sort_by])` Returns a **set** of members from a cube.
+
+    Parameters:
+        cube (object): The cube connection object. Must not be None.
+        set_expression (str | list | tuple): A set expression, a list/tuple of members, or a dimension name.
+        [caption] (str, optional): A caption for the cell. If omitted, the set_expression is used.
+        [sort_order] (int, optional): Sort order for the set. 1 = descending, 2 = ascending, 5 or 6 = sort by measure (requires sort_by).
+        [sort_by] (str, optional): The measure name to sort by (required if sort_order is 5 or 6).
+    
+    **SAMPLE CODE**:
+
+     product_set = CUBESET(cube, "Product")
+     print(product_set)  #refer "Cube Class" in excelfred to understand database
+     # >>> {'type': 'set', 'members': [{'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'Bike'}, {'unique_name': '[Product].[Helmet]', 'dimension': 'Product', 'key': 'Helmet', 'caption': 'Helmet'}], 'caption': 'Product'}
+    
+     sorted_product_set = CUBESET(cube, "Product", "Products Sorted", sort_order=2)
+     print(sorted_product_set)
+     # >>> {'type': 'set', 'members': [{'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'Bike'}, {'unique_name': '[Product].[Helmet]', 'dimension': 'Product', 'key': 'Helmet', 'caption': 'Helmet'}], 'caption': 'Products Sorted'}
+     #  {'type': 'set', 'members': [{'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'Bike'}, {'unique_name': '[Product].[Helmet]', 'dimension': 'Product', 'key': 'Helmet', 'caption': 'Helmet'}], 'caption': 'Products Sorted'}
+
+     sorted_by_sales_asc = CUBESET(cube,"Product","Products Sorted by Sales Asc", 6, "Sales")
+     print(sorted_by_sales_asc)
+     # >>> {'type': 'set', 'members': [
+     #     {'unique_name': '[Product].[Helmet]', 'dimension': 'Product', 'key': 'Helmet', 'caption': 'Helmet'},
+     #     {'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'Bike'} ], 
+     #     'caption': 'Products Sorted by Sales Asc'}
+
+    `Refer "Cube" Class in excelfred to understand database.`
+    """    
+    if cube is None: raise ValueError("#NAME? 🚫 Invalid or missing connection.")
+    members_list = []
+    if isinstance(set_expression, (list, tuple)):
+        for m in set_expression:
+            if isinstance(m, dict) and m.get("type") == "member": members_list.append({"unique_name": m.get("unique_name"), "dimension": m.get("dimension"), "key": m.get("key"), "caption": m.get("caption")}); continue
+            if not isinstance(m, str): raise ValueError("#VALUE! 🚫 set member must be string or member-handle")
+            s = m.strip()
+            try:
+                token = s
+                if token.startswith("[") and token.endswith("]"): token = token[1:-1]
+                parts = token.split("].[")
+                dim = parts[0]; mem = parts[-1]
+            except Exception: raise ValueError(f"#N/A 🚫 Invalid member in set: {m}")
+            if dim not in cube.dimensions: raise ValueError(f"#N/A 🚫 Dimension not found: {dim}")
+            members = cube.dimensions.get(dim, {})
+            if mem in members:
+                info = members[mem]
+                members_list.append({"unique_name": m, "dimension": dim, "key": mem, "caption": info.get("caption", mem)})
+            else:
+                found = False
+                for key, info in members.items():
+                    if str(info.get("caption","")).lower() == mem.lower() or info.get("unique_name")==m:
+                        members_list.append({"unique_name": m, "dimension": dim, "key": key, "caption": info.get("caption", key)})
+                        found = True; break
+                if not found: raise ValueError(f"#N/A 🚫 Member not found in set: {m}")
+    elif isinstance(set_expression, str):
+        s = set_expression.strip()
+        if s in cube.dimensions:
+            members_map = cube.dimensions.get(s, {})
+            for key, info in members_map.items(): members_list.append({"unique_name": info.get("unique_name", f"[{s}].[{key}]"), "dimension": s, "key": key, "caption": info.get("caption", key)})
+        else:
+            try:
+                token = s
+                if token.startswith("[") and token.endswith("]"): token = token[1:-1]
+                dim = token.split("].[")[0]
+            except Exception: dim = None
+            if dim and dim in cube.dimensions:
+                members_map = cube.dimensions.get(dim, {})
+                for key, info in members_map.items(): members_list.append({"unique_name": info.get("unique_name", f"[{dim}].[{key}]"), "dimension": dim, "key": key, "caption": info.get("caption", key)})
+            else: raise ValueError(f"#N/A 🚫 Invalid set expression: {set_expression}")
+    else: raise ValueError("#VALUE! 🚫 set_expression must be string or list/tuple")
+    if len(members_list) == 0: raise ValueError("#N/A 🚫 The set is empty.")
+    if sort_order in (1, 2): members_list = sorted(members_list, key=lambda x: str(x.get("caption","")), reverse=(sort_order==1))
+    elif sort_order in (5, 6):
+        if not sort_by: raise ValueError("#VALUE! 🚫 sort_by measure is required for this sort_order")
+        scores = []
+        for m in members_list:
+            try:
+                meta = cube.measures_meta.get(sort_by)
+                if meta is None: score = 0.0
+                else:
+                    col = meta.get("column"); agg = meta.get("agg","sum"); time_dim = meta.get("time_dim")
+                    df = cube.data if hasattr(cube, "data") else None
+                    if df is None: score = 0.0
+                    else:
+                        if m["dimension"] not in df.columns: score = 0.0
+                        else:
+                            sub = df[df[m["dimension"]] == m["key"]]
+                            if sub.shape[0] == 0: score = 0.0
+                            else:
+                                series_vals = sub[col].astype(float)
+                                if agg == "sum": score = float(series_vals.sum())
+                                elif agg == "avg":
+                                    vals = series_vals.dropna()
+                                    if vals.shape[0] == 0: score = 0.0
+                                    else: score = float(vals.mean())
+                                elif agg == "last_non_empty":
+                                    if time_dim and time_dim in sub.columns:
+                                        orded = sub.loc[series_vals.notna()].sort_values(by=time_dim)
+                                        score = float(orded.iloc[-1][col]) if orded.shape[0]>0 else 0.0
+                                    else: score = float(series_vals.sum())
+                                else: score = float(series_vals.sum())
+                scores.append(score)
+            except Exception: scores.append(0.0)
+        zipped = list(zip(members_list, scores))
+        zipped.sort(key=lambda x: x[1], reverse=(sort_order==6))
+        members_list = [z[0] for z in zipped]
+    else: pass
+    return {"type": "set", "members": members_list, "caption": caption or (set_expression if isinstance(set_expression, str) else "set")}
+
+def CUBESETCOUNT(set_handle: dict | list | tuple) -> int:
+    """
+    `=CUBESETCOUNT(set)` Returns the **number of items** in a set.
+
+    **SAMPLE CODE**:
+
+     print(CUBESETCOUNT(CUBESET(cube, "Product"))) #refer "Cube Class" in excelfred to understand database
+     # OUTPUT >>> 2
+
+    `Parameters: set_handle (dict | list | tuple) A set handle returned by CUBESET or a list/tuple of members.`
+    """
+    if set_handle is None: raise ValueError("#N/A 🚫 Set is empty or not available.")
+    if isinstance(set_handle, dict) and set_handle.get("type") == "set":
+        members = set_handle.get("members", [])
+        return int(len(members))
+    if isinstance(set_handle, (list, tuple)): return int(len(set_handle))
+    raise ValueError("#VALUE! 🚫 Argument must be a set-handle or sequence")
+
+def CUBERANKEDMEMBER(cube: object, set_handle: dict, rank: int, caption: str | None = None) -> dict:
+    """
+    `=CUBERANKEDMEMBER(connection, set, rank, [caption])` Returns the **nth-ranked member** of a set from a cube.
+
+    Parameters:
+        cube (object): The cube connection object. Must not be None.
+        set_handle (dict): A set handle returned by CUBESET.
+        rank (int): The position of the member to return (1-based index).
+        [caption] (str, optional): A caption for the cell. If omitted, the member’s default caption is used.
+    
+    **SAMPLE CODE**:
+
+     rank1 = CUBERANKEDMEMBER(cube, product_set, 1)
+     print(rank1) 
+     # OUTPUT >>> {'type': 'member', 'unique_name': '[Product].[Bike]', 'dimension': 'Product', 'key': 'Bike', 'caption': 'Bike'}
+     #            {'type': 'kpi', 'kpi_name': 'Revenue KPI', 'kpi_part': 'value', 'caption': 'Revenue KPI - value'}
+    
+    `Refer "Cube Class" in excelfred to understand database`
+    """
+    if cube is None: raise ValueError("#NAME? 🚫 Invalid or missing connection.")
+    if not isinstance(set_handle, dict) or set_handle.get("type") != "set": raise ValueError("#VALUE! 🚫 set_handle must be a set-handle")
+    if not isinstance(rank, int) or rank < 1: raise ValueError("#VALUE! 🚫 rank must be an integer >= 1")
+    members = set_handle.get("members", [])
+    if rank > len(members): raise ValueError("#N/A 🚫 rank exceeds set size.")
+    m = members[rank-1]
+    return {"type":"member","unique_name": m.get("unique_name"), "dimension": m.get("dimension"), "key": m.get("key"), "caption": caption or m.get("caption")}
+
+def CUBEVALUE(cube: object, *member_expressions: object) -> float:
+    """
+    `=CUBEVALUE(connection, member_expression1, [member_expression2], ...)` Returns the **aggregated value** from the cube for the given members, set, or KPI.
+
+    Parameters:
+        cube (object): The cube connection object. Must not be None.
+        member_expressions (object): One or more member expressions, sets, KPI handles, or measure names. Each argument defines a filter context for the value.
+    
+    **SAMPLE OUTPUT**:
+
+     print(CUBEVALUE(cube, rank1, "Sales"))             # 2800.0
+     print(CUBEVALUE(cube, rank1, kpi_value_handle))    # 2800.0
+     print(CUBEVALUE(cube, product_set, "Sales"))       # 4300.0
+
+    `Refer "Cube Class" in excelfred to understand database`
+    """
+    import pandas as pd
+    if cube is None: raise ValueError("#NAME? 🚫 Invalid or missing connection.")
+    if not hasattr(cube, "measures_meta") or not hasattr(cube, "data"): raise ValueError("#N/A 🚫 cube missing measures or data")
+    def _resolve_member_inline(expr):
+        if not isinstance(expr, str): raise ValueError("#VALUE! 🚫 member expression must be string")
+        s = expr.strip()
+        try:
+            t = s
+            if t.startswith("[") and t.endswith("]"): t = t[1:-1]
+            parts = t.split("].[")
+            dim = parts[0]; mem = parts[-1]
+        except Exception: raise ValueError(f"#N/A 🚫 Invalid member expression: {expr}")
+        if dim not in cube.dimensions: raise ValueError(f"#N/A 🚫 Dimension not found: {dim}")
+        members = cube.dimensions.get(dim, {})
+        if mem in members: return dim, mem, members[mem]
+        for key, info in members.items():
+            if str(info.get("caption","")).lower() == mem.lower() or info.get("unique_name") == expr: return dim, key, info
+        raise ValueError(f"#N/A 🚫 Member not found: {expr}")
+    measure_name = None; kpi_handle = None
+    contexts = [{}]  
+    for arg in member_expressions:
+        if arg is None: continue
+        if isinstance(arg, dict):
+            t = arg.get("type")
+            if t == "member":
+                dim = arg.get("dimension"); key = arg.get("key")
+                if dim is None or key is None:
+                    try: dim, key, _ = _resolve_member_inline(arg.get("unique_name"))
+                    except Exception as e: raise ValueError(str(e))
+                for c in contexts: c[dim] = key
+                continue
+            if t == "set":
+                members = arg.get("members", [])
+                if len(members) == 0: raise ValueError("#N/A 🚫 empty set")
+                new_contexts = []
+                for mem in members:
+                    for c in contexts:
+                        copied = dict(c)
+                        copied[mem["dimension"]] = mem["key"]
+                        new_contexts.append(copied)
+                contexts = new_contexts
+                continue
+            if t == "kpi": kpi_handle = arg; continue
+            raise ValueError("#VALUE! 🚫 unsupported handle passed to CUBEVALUE")
+        if isinstance(arg, str):
+            s = arg.strip()
+            if s.startswith("[") and "measures" in s.lower():
+                name = s.strip("[]").split("].[")[-1]
+                measure_name = name
+                continue
+            if s in cube.measures_meta:
+                measure_name = s
+                continue
+            if s in cube.dimensions or (s.startswith("[") and s.strip("[]").split("].[")[0] in cube.dimensions):
+                try:
+                    if s in cube.dimensions: dim = s
+                    else:
+                        token = s
+                        if token.startswith("[") and token.endswith("]"): token = token[1:-1]
+                        dim = token.split("].[")[0]
+                    members_map = cube.dimensions.get(dim, {})
+                    members = [{"dimension": dim, "key": k, "caption": v.get("caption", k)} for k, v in members_map.items()]
+                    if len(members) == 0: raise ValueError("#N/A 🚫 The set is empty.")
+                    new_contexts = []
+                    for mem in members:
+                        for c in contexts:
+                            copied = dict(c)
+                            copied[mem["dimension"]] = mem["key"]
+                            new_contexts.append(copied)
+                    contexts = new_contexts
+                    continue
+                except Exception as e: raise ValueError(str(e))
+            try:
+                dim, key, info = _resolve_member_inline(s)
+            except Exception as e: raise ValueError(str(e))
+            for c in contexts: c[dim] = key
+            continue
+        raise ValueError("#VALUE! 🚫 unsupported argument type for CUBEVALUE",info)
+    if kpi_handle is not None:
+        kpi_name = kpi_handle.get("kpi_name"); kpi_part = kpi_handle.get("kpi_part")
+        if kpi_name is None or kpi_part is None: raise ValueError("#VALUE! 🚫 invalid KPI handle")
+        total = 0.0
+        for ctx in contexts:
+            try:
+                if hasattr(cube, "evaluate_kpi_part"): val = cube.evaluate_kpi_part(kpi_name, kpi_part, ctx)
+                else:
+                    parts = cube.kpis.get(kpi_name)
+                    if parts is None: raise ValueError(f"#N/A 🚫 KPI not found: {kpi_name}")
+                    part = parts.get(kpi_part)
+                    if isinstance(part, str):
+                        meta = cube.measures_meta.get(part)
+                        if meta is None: val = 0.0
+                        else:
+                            col = meta.get("column"); agg = meta.get("agg","sum"); time_dim = meta.get("time_dim")
+                            df = cube.data
+                            if df is None: val = 0.0
+                            else:
+                                mask = None
+                                for d,k in ctx.items():
+                                    if d not in df.columns: raise ValueError(f"#N/A 🚫 Dimension column not found in data: {d}")
+                                    m = (df[d]==k)
+                                    mask = m if mask is None else (mask & m)
+                                sub = df if mask is None else df[mask]
+                                if sub.shape[0]==0: val = 0.0
+                                else:
+                                    series_vals = sub[col].astype(float)
+                                    if agg=="sum": val = float(series_vals.sum())
+                                    elif agg=="avg":
+                                        vals = series_vals.dropna()
+                                        if vals.shape[0]==0: raise ValueError("#DIV/0! 🚫 no numeric data for average")
+                                        val = float(vals.mean())
+                                    elif agg=="last_non_empty":
+                                        if time_dim and time_dim in sub.columns:
+                                            orded = sub.loc[series_vals.notna()].sort_values(by=time_dim)
+                                            val = float(orded.iloc[-1][col]) if orded.shape[0]>0 else 0.0
+                                        else: val = float(series_vals.sum())
+                                    else: val = float(series_vals.sum())
+                    elif callable(part):
+                        try: val = part(cube, ctx)
+                        except TypeError: val = part(ctx)
+                    else: val = float(part)
+                total += float(val)
+            except ZeroDivisionError: raise ValueError("#DIV/0! 🚫 division by zero in KPI calculation")
+            except Exception as e:
+                msg = str(e)
+                if msg.startswith("#"): raise
+                raise ValueError(f"#VALUE! 🚫 {msg}")
+        return float(total)
+    if measure_name is None:
+        if "Value" in cube.measures_meta: measure_name = "Value"
+        else:
+            if len(cube.measures_meta) == 1: measure_name = list(cube.measures_meta.keys())[0]
+            else: raise ValueError("#N/A 🚫 No measure specified and no default available")
+    def _eval_one_context(ctx):
+        try:
+            meta = cube.measures_meta.get(measure_name)
+            if meta is None: raise ValueError(f"#N/A 🚫 Measure not found: {measure_name}")
+            col = meta.get("column"); agg = meta.get("agg","sum"); time_dim = meta.get("time_dim")
+            df = cube.data
+            if df is None: raise ValueError("#N/A 🚫 Data not loaded in cube")
+            mask = None
+            for d,k in ctx.items():
+                if d not in df.columns: raise ValueError(f"#N/A 🚫 Dimension column not found in data: {d}")
+                m = (df[d] == k)
+                mask = m if mask is None else (mask & m)
+            sub = df if mask is None else df[mask]
+            if sub.shape[0] == 0: return 0.0
+            mul = None
+            unary_present = False
+            for d,k in ctx.items():
+                info = cube.dimensions.get(d, {}).get(k, {})
+                if info and info.get("unary", 1) != 1:
+                    unary_present = True
+                    break
+            if unary_present:
+                mul = (pd.Series(1, index=sub.index))
+                for d,k in ctx.items():
+                    info = cube.dimensions.get(d, {}).get(k, {})
+                    u = info.get("unary", 1)
+                    if u == -1: mul = mul * -1
+                    elif u == 0: mul = mul * 0
+                    else: mul = mul * 1
+                series_vals = sub[col].astype(float) * mul
+            else: series_vals = sub[col].astype(float)
+            if agg == "sum": return float(series_vals.sum())
+            if agg == "avg":
+                vals = series_vals.dropna()
+                if vals.shape[0] == 0: raise ValueError("#DIV/0! 🚫 no numeric data for average")
+                return float(vals.mean())
+            if agg == "last_non_empty":
+                if time_dim is None or time_dim not in sub.columns: return float(series_vals.sum())
+                ordered = sub.loc[series_vals.notna()].sort_values(by=time_dim)
+                if ordered.shape[0] == 0: return 0.0
+                return float(ordered.iloc[-1][col])
+            return float(series_vals.sum())
+        except ZeroDivisionError: raise
+        except Exception as e:
+            msg = str(e)
+            if msg.startswith("#"): raise
+            raise ValueError(f"#VALUE! 🚫 {msg}")
+    result = 0.0
+    for ctx in contexts:
+        val = _eval_one_context(ctx)
+        result += float(val)
+    return float(result)
