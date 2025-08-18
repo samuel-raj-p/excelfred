@@ -6,6 +6,11 @@ excelfred (alias "xl") - A Python package recreating Excel 514 functions
 def __getattr__(name):
     """
     returns all function names starting with that letter in alphabetical order.
+
+    **CODE**:
+
+     # import excelfred as xl; xl.
+     # from excelfred import ...
     """
     if len(name) == 1 and name.isalpha(): 
         letter = name.upper(); funcs = []
@@ -36,7 +41,6 @@ def ABS(*args: int | float | str) -> int | float:
                 except: raise ValueError(f"🚫 String Error: Invalid Formula `{arg}` is not evaluatable.")
             try: number = float(arg)
             except: raise TypeError(f"🚫 ABS() only works on numbers or math-like strings. Got `{arg}`.")
-
             total += abs(number)
         assert args, "Value Error: 🚫 ABS() requires at least one numeric input."
         return total
@@ -44,9 +48,7 @@ def ABS(*args: int | float | str) -> int | float:
 
 def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: float = 15000.00, frequency: int = 1, basis: int = 0, calc_method: bool = True) -> int | float:
     """
-    `=ACCRINT(issue, first_interest, settlement, rate, par, frequency, [basis], [calc_method])`
-
-    Calculates accrued interest for a security that pays periodic interest.
+    `=ACCRINT(issue, first_interest, settlement, rate, par, frequency, [basis], [calc_method])` Calculates accrued interest for a security that pays periodic interest.
 
     Parameters:
         issue (str): Issue date (format: 'DD-MM-YYYY')
@@ -74,7 +76,6 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
         first_date = pd.to_datetime(first_interest, dayfirst=True)
         settle_date = pd.to_datetime(settlement, dayfirst=True)
     except Exception: raise ValueError("🚫 Could not parse one or more dates. Try using common formats like 'DD-MM-YYYY'")
-
     if settle_date <= issue_date: raise ValueError("🚫 Settlement date must be after issue date.")
     if frequency not in [1, 2, 4]: raise ValueError("🚫 Frequency must be 1 (Annual), 2 (Semi-annual), or 4 (Quarterly).")
     if basis not in range(5): raise ValueError("🚫 Basis must be between 0 and 4.")
@@ -104,9 +105,7 @@ def ACCRINT(issue: str, first_interest: str, settlement: str, rate: float, par: 
 
 def ACCRINTM(issue: str, maturity: str, rate: float, par: float = 15000.00, basis: int = 0) -> int | float:
     """
-    `=ACCRINTM(issue, settlement maturity, rate, par, [basis])`
-
-    Returns the accrued interest for a security that pays interest at maturity (no periodic coupons).
+    `=ACCRINTM(issue, settlement maturity, rate, par, [basis])` Returns the accrued interest for a security that pays interest at maturity (no periodic coupons).
 
     Parameters:
         issue (str): Issue date in 'DD-MM-YYYY' format
@@ -1363,6 +1362,45 @@ def BITRSHIFT(number: int, shift_amount: int) -> int:
     if not (isinstance(number, int) and isinstance(shift_amount, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
     return number >> shift_amount
 
+def BITNAND(number1: int, number2: int) -> int:
+    """
+    `=BITXAND(number1, number2)` Returns a **bitwise NOT AND** of two numbers.
+
+    *Example Input*:
+
+        print(BITXAND(5, 3))    # 14 (NOT(0101 AND 0011) = NOT(0001) = 1110)
+        print(BITXAND(12, 25))  # 23 (NOT(1100 AND 11001) = NOT(01000) = 10111)
+    """
+    if number1 < 0 or number2 < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number1, int) and isinstance(number2, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return ~(number1 & number2) & ((1 << max(number1.bit_length(), number2.bit_length())) - 1)
+
+def BITNOR(number1: int, number2: int) -> int:
+    """
+    `=BITNOR(number1, number2)` Returns a **bitwise NOT OR** of two numbers.
+
+    *Example Input*:
+
+        print(BITNOR(5, 3))    # 8  (NOT(0101 OR 0011) = NOT(0111) = 1000)
+        print(BITNOR(12, 25))  # 2  (NOT(1100 OR 11001) = NOT(11101) = 00010)
+    """
+    if number1 < 0 or number2 < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number1, int) and isinstance(number2, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return ~(number1 | number2) & ((1 << max(number1.bit_length(), number2.bit_length())) - 1)
+
+def BITXAND(number1: int, number2: int) -> int:
+    """
+    `=BITXAND(number1, number2)` Returns a **bitwise** XAND (equivalence) of two numbers.
+
+    *Example Input*:
+
+        print(BITXAND(5, 3))    # 9  (0101 XAND 0011 = 1001)
+        print(BITXAND(12, 25))  # 10 (01100 XAND 11001 = 01010)
+    """
+    if number1 < 0 or number2 < 0: raise ValueError("#NUM! 🚫 numbers must be non-negative integers")
+    if not (isinstance(number1, int) and isinstance(number2, int)): raise ValueError("#VALUE! 🚫 numbers must be integers")
+    return ~(number1 ^ number2) & ((1 << max(number1.bit_length(), number2.bit_length())) - 1)
+
 def BITXOR(number1: int, number2: int) -> int:
     """
     `=BITXOR(number1, number2)` Returns a **bitwise** XOR of two numbers.
@@ -1404,7 +1442,7 @@ def CEILING_MATH(number: int | float, significant: int | float = 1, mode: int = 
     sign = np.sign(number) 
     return np.floor(number / significant) * significant if sign < 0 and mode != 0 else np.ceil(np.abs(number) / significant) * significant * sign
 
-def CELL(info_type: str, reference) -> any:
+def CELL(info_type: str, reference: any) -> any:
     """
     `=CELL(info_type, reference)` Returns information about the formatting, location, or contents of the first cell, according to the sheet's reading order, in a reference .
 
@@ -1422,9 +1460,7 @@ def CELL(info_type: str, reference) -> any:
                  "type"          → Returns "b" if blank, "l" if label (text), "v" if value (number).
                  "width"         → Returns the approximate column width (simulated as length of string representation).
 
-  
-
-        **reference** : scalar value, NumPy array element, or Pandas cell. (The cell to retrieve information from)
+    `reference : scalar value, NP array, or PD cell (The cell to retrieve information from)`
 
     **Example Input**:
 
@@ -2718,7 +2754,7 @@ def CUBEKPIMEMBER(cube: object, kpi_name: str, kpi_property: int | str, caption:
         
     **SAMPLE CODE**:
 
-     kpi_value_handle = CUBEKPIMEMBER(cube, "Revenue KPI")
+     kpi_value_handle = CUBEKPIMEMBER(cube, "Revenue KPI","value)
      print(kpi_value_handle) 
 
      # OUTPUT:
@@ -3200,3 +3236,97 @@ def CUBEVALUE(cube: object, *member_expressions: object) -> float:
         val = _eval_one_context(ctx)
         result += float(val)
     return float(result)
+
+def CUMIPMT(rate, n_per, pv, start_period, end_period, payment_type=0) -> float:
+    """
+    =CUMIPMT(rate, n_per, pv, start_period, end_period, type)
+    Returns the cumulative interest paid on a loan between start_period and end_period.
+
+    Parameters:
+        rate (float): Interest rate per period (e.g., monthly rate if payments are monthly).
+        n_per (int): Total number of payment periods.
+        pv (float): Present value (principal).
+        start_period (int): First period in the range (1-based).
+        end_period (int): Last period in the range (1-based).
+        type (int, optional): When payments are due:
+            0 = payment at end of period (default)
+            1 = payment at beginning of period
+
+    *Sample Code*:
+
+     montly rate = 0.05 / 12 
+     print(CUMIPMT(monthly_rate, 60, 10000, 1, 12, 0))  #-494.54
+     print(CUMIPMT(monthly_rate, 60, 10000, 1, 12, 1))  #-7684.88 
+    """
+    import numpy as np
+    try: rate = float(rate)
+    except: raise ValueError("#VALUE! 🚫 rate must be numeric")
+    try: n_per = int(n_per)
+    except: raise ValueError("#VALUE! 🚫 n_per must be an integer")
+    try: pv = float(pv)
+    except: raise ValueError("#VALUE! 🚫 pv must be numeric")
+    try: start_period = int(start_period); end_period = int(end_period)
+    except: raise ValueError("#VALUE! 🚫 start_period and end_period must be integers")
+    try: payment_type = int(payment_type)
+    except: raise ValueError("#VALUE! 🚫 type must be 0 or 1")
+    if n_per <= 0: raise ValueError("#NUM! 🚫 n_per must be > 0")
+    if start_period < 1 or end_period < 1 or start_period > n_per or end_period > n_per: raise ValueError("#NUM! 🚫 start_period and end_period must be between 1 and n_per (inclusive)")
+    if start_period > end_period: raise ValueError("#NUM! 🚫 start_period cannot be greater than end_period")
+    if payment_type not in (0, 1): raise ValueError("#VALUE! 🚫 type must be 0 (end) or 1 (beginning)")
+    if np.isclose(rate, 0.0): return -0.0
+    pv_adj = pv if payment_type == 0 else (pv / (1.0 + rate))
+    try: pmt = - (pv_adj * rate) / (1.0 - np.power(1.0 + rate, -n_per))
+    except FloatingPointError: raise ValueError("#DIV/0! 🚫 numerical issue computing payment (check rate/n_per)")
+    ipmt_for_period = lambda per: pv_adj * rate * np.power(1.0 + rate, per - 1) + \
+                                  pmt * (np.power(1.0 + rate, per - 1) - 1.0)
+    total_interest = np.sum([ipmt_for_period(per) for per in range(start_period, end_period + 1)])
+    return -float(total_interest)
+
+def CUMPRINC(rate, n_per, pv, start_period, end_period, payment_type=0) -> float:
+    """
+    =CUMPRINC(rate, n_per, pv, start_period, end_period, type)
+    Returns the cumulative principal paid on a loan between start_period and end_period.
+
+    Parameters:
+        rate (float): Interest rate per period.
+        n_per (int): Total number of payment periods.
+        pv (float): Present value (principal).
+        start_period (int): First period in the range (1-based).
+        end_period (int): Last period in the range (1-based).
+        type (int, optional): When payments are due:
+            0 = payment at end of period (default)
+            1 = payment at beginning of period
+
+    *Sample Code*:
+
+     montly rate = 0.05 / 12 
+     print(CUMPRINC(monthly_rate, 60, 10000, 1, 12, 0))  #-516.43 
+     print(CUMPRINC(monthly_rate, 60, 10000, 1, 12, 1))  #-7663.00 
+    """
+    import numpy as np
+    try: rate = float(rate)
+    except: raise ValueError("#VALUE! 🚫 rate must be numeric")
+    try: n_per = int(n_per)
+    except: raise ValueError("#VALUE! 🚫 n_per must be an integer")
+    try: pv = float(pv)
+    except: raise ValueError("#VALUE! 🚫 pv must be numeric")
+    try: start_period = int(start_period); end_period = int(end_period)
+    except: raise ValueError("#VALUE! 🚫 start_period and end_period must be integers")
+    try: payment_type = int(payment_type)
+    except: raise ValueError("#VALUE! 🚫 type must be 0 or 1")
+    if n_per <= 0: raise ValueError("#NUM! 🚫 n_per must be > 0")
+    if start_period < 1 or end_period < 1 or start_period > n_per or end_period > n_per: raise ValueError("#NUM! 🚫 start_period and end_period must be between 1 and n_per (inclusive)")
+    if start_period > end_period: raise ValueError("#NUM! 🚫 start_period cannot be greater than end_period")
+    if payment_type not in (0, 1): raise ValueError("#VALUE! 🚫 type must be 0 (end) or 1 (beginning)")
+    if np.isclose(rate, 0.0):
+        pmt = -pv / n_per
+        return float(pmt * (end_period - start_period + 1))
+    pv_adj = pv if payment_type == 0 else (pv / (1.0 + rate))
+    try: pmt = - (pv_adj * rate) / (1.0 - np.power(1.0 + rate, -n_per))
+    except FloatingPointError: raise ValueError("#DIV/0! 🚫 numerical issue computing payment (check rate/n_per)")
+    ipmt_for_period = lambda per: pv_adj * rate * np.power(1.0 + rate, per - 1) + \
+                                  pmt * (np.power(1.0 + rate, per - 1) - 1.0)
+    total_interest = np.sum([ipmt_for_period(per) for per in range(start_period, end_period + 1)])
+    total_payments = pmt * (end_period - start_period + 1)
+    return float(total_payments - total_interest)
+
